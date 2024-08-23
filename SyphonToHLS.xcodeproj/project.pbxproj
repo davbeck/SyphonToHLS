@@ -1,0 +1,578 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 70;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; };
+		1127AC512C76375D004C5D8C /* Syphon.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		1127AC2D2C7636FA004C5D8C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1127AC132C7636F8004C5D8C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1127AC1A2C7636F8004C5D8C;
+			remoteInfo = SyphonToHLS;
+		};
+		1127AC372C7636FA004C5D8C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1127AC132C7636F8004C5D8C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1127AC1A2C7636F8004C5D8C;
+			remoteInfo = SyphonToHLS;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		1127AC4D2C763735004C5D8C /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				1127AC512C76375D004C5D8C /* Syphon.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		1127AC1B2C7636F8004C5D8C /* SyphonToHLS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SyphonToHLS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1127AC2C2C7636FA004C5D8C /* SyphonToHLSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SyphonToHLSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1127AC362C7636FA004C5D8C /* SyphonToHLSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SyphonToHLSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1127AC4E2C763756004C5D8C /* Syphon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Syphon.framework; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		1127AC1D2C7636F8004C5D8C /* SyphonToHLS */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLS; sourceTree = "<group>"; };
+		1127AC2F2C7636FA004C5D8C /* SyphonToHLSTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLSTests; sourceTree = "<group>"; };
+		1127AC392C7636FA004C5D8C /* SyphonToHLSUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLSUITests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1127AC182C7636F8004C5D8C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1127AC292C7636FA004C5D8C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1127AC332C7636FA004C5D8C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1127AC122C7636F8004C5D8C = {
+			isa = PBXGroup;
+			children = (
+				1127AC4E2C763756004C5D8C /* Syphon.framework */,
+				1127AC1D2C7636F8004C5D8C /* SyphonToHLS */,
+				1127AC2F2C7636FA004C5D8C /* SyphonToHLSTests */,
+				1127AC392C7636FA004C5D8C /* SyphonToHLSUITests */,
+				1127AC1C2C7636F8004C5D8C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		1127AC1C2C7636F8004C5D8C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1127AC1B2C7636F8004C5D8C /* SyphonToHLS.app */,
+				1127AC2C2C7636FA004C5D8C /* SyphonToHLSTests.xctest */,
+				1127AC362C7636FA004C5D8C /* SyphonToHLSUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1127AC1A2C7636F8004C5D8C /* SyphonToHLS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1127AC402C7636FA004C5D8C /* Build configuration list for PBXNativeTarget "SyphonToHLS" */;
+			buildPhases = (
+				1127AC172C7636F8004C5D8C /* Sources */,
+				1127AC182C7636F8004C5D8C /* Frameworks */,
+				1127AC192C7636F8004C5D8C /* Resources */,
+				1127AC4D2C763735004C5D8C /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				1127AC1D2C7636F8004C5D8C /* SyphonToHLS */,
+			);
+			name = SyphonToHLS;
+			packageProductDependencies = (
+			);
+			productName = SyphonToHLS;
+			productReference = 1127AC1B2C7636F8004C5D8C /* SyphonToHLS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		1127AC2B2C7636FA004C5D8C /* SyphonToHLSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1127AC432C7636FA004C5D8C /* Build configuration list for PBXNativeTarget "SyphonToHLSTests" */;
+			buildPhases = (
+				1127AC282C7636FA004C5D8C /* Sources */,
+				1127AC292C7636FA004C5D8C /* Frameworks */,
+				1127AC2A2C7636FA004C5D8C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1127AC2E2C7636FA004C5D8C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1127AC2F2C7636FA004C5D8C /* SyphonToHLSTests */,
+			);
+			name = SyphonToHLSTests;
+			packageProductDependencies = (
+			);
+			productName = SyphonToHLSTests;
+			productReference = 1127AC2C2C7636FA004C5D8C /* SyphonToHLSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		1127AC352C7636FA004C5D8C /* SyphonToHLSUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1127AC462C7636FA004C5D8C /* Build configuration list for PBXNativeTarget "SyphonToHLSUITests" */;
+			buildPhases = (
+				1127AC322C7636FA004C5D8C /* Sources */,
+				1127AC332C7636FA004C5D8C /* Frameworks */,
+				1127AC342C7636FA004C5D8C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1127AC382C7636FA004C5D8C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1127AC392C7636FA004C5D8C /* SyphonToHLSUITests */,
+			);
+			name = SyphonToHLSUITests;
+			packageProductDependencies = (
+			);
+			productName = SyphonToHLSUITests;
+			productReference = 1127AC362C7636FA004C5D8C /* SyphonToHLSUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1127AC132C7636F8004C5D8C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					1127AC1A2C7636F8004C5D8C = {
+						CreatedOnToolsVersion = 16.0;
+						LastSwiftMigration = 1600;
+					};
+					1127AC2B2C7636FA004C5D8C = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = 1127AC1A2C7636F8004C5D8C;
+					};
+					1127AC352C7636FA004C5D8C = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = 1127AC1A2C7636F8004C5D8C;
+					};
+				};
+			};
+			buildConfigurationList = 1127AC162C7636F8004C5D8C /* Build configuration list for PBXProject "SyphonToHLS" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 1127AC122C7636F8004C5D8C;
+			productRefGroup = 1127AC1C2C7636F8004C5D8C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1127AC1A2C7636F8004C5D8C /* SyphonToHLS */,
+				1127AC2B2C7636FA004C5D8C /* SyphonToHLSTests */,
+				1127AC352C7636FA004C5D8C /* SyphonToHLSUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1127AC192C7636F8004C5D8C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1127AC2A2C7636FA004C5D8C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1127AC342C7636FA004C5D8C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1127AC172C7636F8004C5D8C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1127AC282C7636FA004C5D8C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1127AC322C7636FA004C5D8C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1127AC2E2C7636FA004C5D8C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1127AC1A2C7636F8004C5D8C /* SyphonToHLS */;
+			targetProxy = 1127AC2D2C7636FA004C5D8C /* PBXContainerItemProxy */;
+		};
+		1127AC382C7636FA004C5D8C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1127AC1A2C7636F8004C5D8C /* SyphonToHLS */;
+			targetProxy = 1127AC372C7636FA004C5D8C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1127AC3E2C7636FA004C5D8C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		1127AC3F2C7636FA004C5D8C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		1127AC412C7636FA004C5D8C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = SyphonToHLS/SyphonToHLS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"SyphonToHLS/Preview Content\"";
+				DEVELOPMENT_TEAM = 7TR2B85D62;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = co.davidbeck.SyphonToHLS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		1127AC422C7636FA004C5D8C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = SyphonToHLS/SyphonToHLS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"SyphonToHLS/Preview Content\"";
+				DEVELOPMENT_TEAM = 7TR2B85D62;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = co.davidbeck.SyphonToHLS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		1127AC442C7636FA004C5D8C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7TR2B85D62;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = co.davidbeck.SyphonToHLSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SyphonToHLS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SyphonToHLS";
+			};
+			name = Debug;
+		};
+		1127AC452C7636FA004C5D8C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7TR2B85D62;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = co.davidbeck.SyphonToHLSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SyphonToHLS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SyphonToHLS";
+			};
+			name = Release;
+		};
+		1127AC472C7636FA004C5D8C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7TR2B85D62;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = co.davidbeck.SyphonToHLSUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = SyphonToHLS;
+			};
+			name = Debug;
+		};
+		1127AC482C7636FA004C5D8C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7TR2B85D62;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = co.davidbeck.SyphonToHLSUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = SyphonToHLS;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1127AC162C7636F8004C5D8C /* Build configuration list for PBXProject "SyphonToHLS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1127AC3E2C7636FA004C5D8C /* Debug */,
+				1127AC3F2C7636FA004C5D8C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1127AC402C7636FA004C5D8C /* Build configuration list for PBXNativeTarget "SyphonToHLS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1127AC412C7636FA004C5D8C /* Debug */,
+				1127AC422C7636FA004C5D8C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1127AC432C7636FA004C5D8C /* Build configuration list for PBXNativeTarget "SyphonToHLSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1127AC442C7636FA004C5D8C /* Debug */,
+				1127AC452C7636FA004C5D8C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1127AC462C7636FA004C5D8C /* Build configuration list for PBXNativeTarget "SyphonToHLSUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1127AC472C7636FA004C5D8C /* Debug */,
+				1127AC482C7636FA004C5D8C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1127AC132C7636F8004C5D8C /* Project object */;
+}
