@@ -1,12 +1,18 @@
 import AVFoundation
 import CoreImage
+import OSLog
 
 private let url = URL(fileURLWithPath: "/Users/davbeck/Movies/Livestream")
 
 private let queue = DispatchQueue(label: "hls")
 
 actor HLSService {
-	let writerDelegate = WriterDelegate()
+	enum Error: Swift.Error {
+		case notStarted
+		case invalidWriterStatus(AVAssetWriter.Status)
+	}
+
+	let writerDelegate: WriterDelegate
 
 	private let assetWriter: AVAssetWriter
 	private let videoInput: AVAssetWriterInput
@@ -14,11 +20,18 @@ actor HLSService {
 
 	private let context = CIContext()
 
+	private let logger = Logger(
+		subsystem: Bundle(for: HLSService.self).bundleIdentifier ?? "",
+		category: "HLSService"
+	)
+
 	var recordingStartTime: CFTimeInterval?
 
+	private let delegateTask: Task<Void, Never>
+
 	init() {
-//		try? FileManager.default.removeItem(at: url)
-//		self.assetWriter = try! AVAssetWriter(outputURL: url.appendingPathComponent("livestream.m4v"), fileType: .m4v)
+		let (segmentStream, segmentContinuation) = AsyncStream.makeStream(of: Segment.self)
+		writerDelegate = .init(continuation: segmentContinuation)
 
 		self.assetWriter = AVAssetWriter(contentType: .mpeg4Movie)
 
@@ -47,128 +60,26 @@ actor HLSService {
 				kCVPixelBufferMetalCompatibilityKey as String: true,
 			]
 		)
-	}
 
-	func start() {
-		recordingStartTime = CACurrentMediaTime()
-
-		assetWriter.initialSegmentStartTime = .zero
-		assetWriter.startWriting()
-		assetWriter.startSession(atSourceTime: .zero)
-	}
-
-	func stop() async {
-		videoInput.markAsFinished()
-		await assetWriter.finishWriting()
-	}
-
-	private var lastPresentationTime: CMTime?
-
-	func writeFrame(forTexture texture: MTLTexture) {
-		guard let recordingStartTime else {
-			print("not started")
-			return
-		}
-		let frameTime = CACurrentMediaTime() - recordingStartTime
-		let presentationTime = CMTimeMakeWithSeconds(frameTime, preferredTimescale: 240)
-		guard presentationTime != lastPresentationTime else {
-			print("next frame too soon, skipping")
-			return
-		}
-		lastPresentationTime = presentationTime
-
-		guard assetWriter.status == .writing else {
-			print("invalid status \(assetWriter.status): \(assetWriter.error)")
-			return
-		}
-
-		guard videoInput.isReadyForMoreMediaData else {
-			print("input not ready")
-			return
-		}
-
-		guard var image = CIImage(mtlTexture: texture) else {
-			print("invalid image")
-			return
-		}
-//		image = image
-//			.transformed(by: CGAffineTransformMakeScale(1, -1))
-//			.transformed(by: CGAffineTransformMakeTranslation(0, image.extent.size.height))
-
-		guard let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool else {
-			print("Pixel buffer asset writer input did not have a pixel buffer pool available; cannot retrieve frame")
-			return
-		}
-
-		var maybePixelBuffer: CVPixelBuffer?
-		let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &maybePixelBuffer)
-		if status != kCVReturnSuccess {
-			print("Could not get pixel buffer from asset writer input; dropping frame status: \(status)")
-			return
-		}
-
-		guard let pixelBuffer = maybePixelBuffer else { return }
-
-//		CVPixelBufferLockBaseAddress(pixelBuffer, [])
-//		let pixelBufferBytes = CVPixelBufferGetBaseAddress(pixelBuffer)!
-
-		// Use the bytes per row value from the pixel buffer since its stride may be rounded up to be 16-byte aligned
-//		let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-//		let region = MTLRegionMake2D(0, 0, texture.width, texture.height)
-
-		context.render(image, to: pixelBuffer)
-		print("texture pixelFormat: \(texture.pixelFormat.rawValue) bytesPerRow: \(texture.bufferBytesPerRow) textureType: \(texture.textureType.rawValue)")
-//		texture.getBytes(pixelBufferBytes, bytesPerRow: bytesPerRow, from: region, mipmapLevel: 0)
-
-		let result = pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
-		if !result {
-			print("append fail?!?!")
-		}
-
-//		CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
-	}
-
-	final class WriterDelegate: NSObject, AVAssetWriterDelegate, @unchecked Sendable {
-		var segments: Int = 0
-
-		func assetWriter(
-			_ writer: AVAssetWriter,
-			didOutputSegmentData segmentData: Data,
-			segmentType: AVAssetSegmentType,
-			segmentReport: AVAssetSegmentReport?
-		) {
-//			print("didOutputSegmentData", segmentData, segmentType, segmentReport)
-
-			switch segmentType {
-			case .initialization:
-				queue.async {
-					do {
-						try segmentData.write(
+		delegateTask = Task { [logger] in
+			var segmentCount = 0
+			for await segment in segmentStream {
+				do {
+					switch segment.type {
+					case .initialization:
+						try segment.data.write(
 							to: url.appendingPathComponent("initialization.mp4"),
 							options: .atomic
 						)
-					} catch {
-						print("failed to write initialization data: \(error)")
-					}
-				}
-			case .separable:
-				guard let trackReports = segmentReport?.trackReports.first else { return }
-
-				let timestamp = trackReports.earliestPresentationTimeStamp
-				let duration = trackReports.duration
-
-				let formattedTimestamp = Duration.seconds(timestamp.seconds).formatted()
-				print("earliestPresentationTimeStamps", formattedTimestamp)
-				queue.async {
-					do {
-						try segmentData.write(
-							to: url.appendingPathComponent("segment-\(self.segments).m4s"),
+					case .separable:
+						try segment.data.write(
+							to: url.appendingPathComponent("segment-\(segmentCount).m4s"),
 							options: .atomic
 						)
 
-						self.segments += 1
+						segmentCount += 1
 
-						let segmentTemplate = (0 ..< self.segments)
+						let segmentTemplate = (0 ..< segmentCount)
 							.map {
 								"""
 								#EXTINF:1.0,
@@ -189,32 +100,114 @@ actor HLSService {
 							atomically: true,
 							encoding: .utf8
 						)
-					} catch {
-						print("failed to write segment data: \(error)")
+					@unknown default:
+						logger.error("@unknown segment type \(segment.type.rawValue)")
 					}
+				} catch {
+					logger.error("failed to write segment data: \(error)")
 				}
-			@unknown default:
-				print("@unknown \(segmentType.rawValue)")
 			}
 		}
 	}
-}
+	
+	deinit {
+		delegateTask.cancel()
+	}
 
-extension AVAssetWriter.Status: CustomStringConvertible {
-	public var description: String {
-		switch self {
-		case .unknown:
-			"unknown"
-		case .writing:
-			"writing"
-		case .completed:
-			"completed"
-		case .failed:
-			"failed"
-		case .cancelled:
-			"cancelled"
-		@unknown default:
-			"@unknown \(rawValue)"
+	func start() {
+		recordingStartTime = CACurrentMediaTime()
+
+		assetWriter.initialSegmentStartTime = .zero
+		assetWriter.startWriting()
+		assetWriter.startSession(atSourceTime: .zero)
+	}
+
+	func stop() async {
+		recordingStartTime = nil
+
+		videoInput.markAsFinished()
+		await assetWriter.finishWriting()
+	}
+
+	private var lastPresentationTime: CMTime?
+
+	func writeFrame(forTexture texture: MTLTexture) throws {
+		guard let recordingStartTime else {
+			throw Error.notStarted
+		}
+
+		let frameTime = CACurrentMediaTime() - recordingStartTime
+		let presentationTime = CMTimeMakeWithSeconds(frameTime, preferredTimescale: 240)
+		guard presentationTime != lastPresentationTime else {
+			logger.warning("next frame too soon, skipping")
+			return
+		}
+		lastPresentationTime = presentationTime
+
+		guard assetWriter.status == .writing else {
+			if let error = assetWriter.error {
+				throw error
+			} else {
+				throw Error.invalidWriterStatus(assetWriter.status)
+			}
+		}
+
+		guard videoInput.isReadyForMoreMediaData else {
+			logger.warning("input not ready")
+			return
+		}
+
+		guard let image = CIImage(mtlTexture: texture) else {
+			logger.error("invalid image")
+			return
+		}
+
+		guard let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool else {
+			logger.error("Pixel buffer asset writer input did not have a pixel buffer pool available; cannot retrieve frame")
+			return
+		}
+
+		var maybePixelBuffer: CVPixelBuffer?
+		let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &maybePixelBuffer)
+		guard let pixelBuffer = maybePixelBuffer, status == kCVReturnSuccess else {
+			logger.error("Could not get pixel buffer from asset writer input; dropping frame (status \(status))")
+			return
+		}
+
+		context.render(image, to: pixelBuffer)
+
+		let result = pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
+		if !result {
+			logger.error("could not append pixel buffer at \(String(describing: presentationTime))")
+		}
+	}
+
+	struct Segment {
+		var data: Data
+		var type: AVAssetSegmentType
+		var report: AVAssetSegmentReport?
+	}
+
+	final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
+		let continuation: AsyncStream<Segment>.Continuation
+
+		init(continuation: AsyncStream<Segment>.Continuation) {
+			self.continuation = continuation
+		}
+
+		func assetWriter(
+			_ writer: AVAssetWriter,
+			didOutputSegmentData segmentData: Data,
+			segmentType: AVAssetSegmentType,
+			segmentReport: AVAssetSegmentReport?
+		) {
+			continuation.yield(
+				.init(
+					data: segmentData,
+					type: segmentType,
+					report: segmentReport
+				)
+			)
 		}
 	}
 }
