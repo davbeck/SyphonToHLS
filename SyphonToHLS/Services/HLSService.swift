@@ -2,7 +2,7 @@ import AVFoundation
 import CoreImage
 import OSLog
 
-private let url = URL(fileURLWithPath: "/Users/davbeck/Movies/Livestream")
+private let url = URL.moviesDirectory.appendingPathComponent("Livestream")
 
 private let queue = DispatchQueue(label: "hls")
 
@@ -62,7 +62,17 @@ actor HLSService {
 		)
 
 		delegateTask = Task { [logger] in
-			var segmentCount = 0
+			struct Record {
+				var index: Int
+				var duration: CMTime
+
+				var name: String {
+					"segment-\(index).m4s"
+				}
+			}
+			var lastIndex = 0
+			var records: [Record] = []
+
 			for await segment in segmentStream {
 				do {
 					switch segment.type {
@@ -72,25 +82,38 @@ actor HLSService {
 							options: .atomic
 						)
 					case .separable:
+						guard let trackReport = segment.report?.trackReports.first else { continue }
+
+						lastIndex += 1
+
+						let record = Record(
+							index: lastIndex,
+							duration: trackReport.duration
+						)
+
 						try segment.data.write(
-							to: url.appendingPathComponent("segment-\(segmentCount).m4s"),
+							to: url.appendingPathComponent(record.name),
 							options: .atomic
 						)
 
-						segmentCount += 1
+						records.append(record)
 
-						let segmentTemplate = (0 ..< segmentCount)
-							.map {
+						let segmentTemplate = records
+							.map { record in
 								"""
-								#EXTINF:1.0,
-								segment-\($0).m4s
+								#EXTINF:\(record.duration.seconds),
+								\(record.name)
 								"""
 							}
 							.joined(separator: "\n")
 
+						let startSequence = records.first?.index ?? 1
+
 						let template = """
 						#EXTM3U
+						#EXT-X-TARGETDURATION:10
 						#EXT-X-VERSION:9
+						#EXT-X-MEDIA-SEQUENCE:\(startSequence)
 						#EXT-X-MAP:URI="initialization.mp4"
 						\(segmentTemplate)
 						"""
@@ -109,7 +132,7 @@ actor HLSService {
 			}
 		}
 	}
-	
+
 	deinit {
 		delegateTask.cancel()
 	}
