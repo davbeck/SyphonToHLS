@@ -1,3 +1,4 @@
+import AVFoundation
 import Metal
 import Observation
 
@@ -41,6 +42,8 @@ final class ProfileSession {
 	func start(_ server: ServerDescription) async {
 		isRunning = true
 		defer { isRunning = false }
+
+		guard await AVCaptureDevice.requestAccess(for: .audio) else { return }
 
 		let hlsService = HLSService()
 		await hlsService.start()

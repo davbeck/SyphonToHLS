@@ -1,6 +1,7 @@
 import AVFoundation
 import CoreImage
 import OSLog
+import VideoToolbox
 
 private let url = URL.moviesDirectory.appendingPathComponent("Livestream")
 
@@ -13,10 +14,14 @@ actor HLSService {
 	}
 
 	let writerDelegate: WriterDelegate
+	let captureAudioDataOutputSampleBufferDelegate: CaptureAudioDataOutputSampleBufferDelegate
 
+	private let clock = CMClock.hostTimeClock
 	private let assetWriter: AVAssetWriter
 	private let videoInput: AVAssetWriterInput
 	private let pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor
+	private let captureSession = AVCaptureSession()
+	private let audioInput: AVAssetWriterInput
 
 	private let context = CIContext()
 
@@ -28,6 +33,7 @@ actor HLSService {
 	var recordingStartTime: CFTimeInterval?
 
 	private let delegateTask: Task<Void, Never>
+	private let audioCaptureTask: Task<Void, Never>
 
 	init() {
 		let (segmentStream, segmentContinuation) = AsyncStream.makeStream(of: Segment.self)
@@ -40,12 +46,19 @@ actor HLSService {
 		assetWriter.preferredOutputSegmentInterval = CMTime(seconds: 1, preferredTimescale: 1)
 		assetWriter.delegate = writerDelegate
 
+		// Video
+
 		self.videoInput = AVAssetWriterInput(
 			mediaType: .video,
 			outputSettings: [
 				AVVideoCodecKey: AVVideoCodecType.h264,
 				AVVideoWidthKey: 1920,
 				AVVideoHeightKey: 1080,
+
+//				AVVideoCompressionPropertiesKey: [
+//					kVTCompressionPropertyKey_AverageBitRate: 6_000_000,
+//					kVTCompressionPropertyKey_ProfileLevel: kVTProfileLevel_H264_High_4_1,
+//				],
 			]
 		)
 		videoInput.expectsMediaDataInRealTime = true
@@ -131,22 +144,77 @@ actor HLSService {
 				}
 			}
 		}
+
+		// Audio
+
+		audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: [
+			AVFormatIDKey: kAudioFormatMPEG4AAC,
+
+			AVSampleRateKey: 48000,
+			AVNumberOfChannelsKey: 1,
+			AVEncoderBitRateKey: 160_000,
+		])
+		audioInput.expectsMediaDataInRealTime = true
+
+		let (audioCaptureStream, audioCaptureContinuation) = AsyncStream.makeStream(of: CMSampleBuffer.self)
+		captureAudioDataOutputSampleBufferDelegate = .init(continuation: audioCaptureContinuation)
+
+		captureSession.beginConfiguration()
+
+		let audioDevice = AVCaptureDevice.default(for: .audio)!
+		// Wrap the audio device in a capture device input.
+		let audioDeviceInput = try! AVCaptureDeviceInput(device: audioDevice)
+
+		captureSession.addInput(audioDeviceInput)
+		let captureAudioOutput = AVCaptureAudioDataOutput()
+		captureAudioOutput.setSampleBufferDelegate(captureAudioDataOutputSampleBufferDelegate, queue: queue)
+
+		captureSession.addOutput(captureAudioOutput)
+
+		captureSession.commitConfiguration()
+
+		assetWriter.add(audioInput)
+
+		audioCaptureTask = Task { [assetWriter, audioInput, logger] in
+			for await sampleBuffer in audioCaptureStream {
+				guard assetWriter.status == .writing else {
+					logger.warning("AVAssetWriter is not writing")
+					continue
+				}
+				
+				guard audioInput.isReadyForMoreMediaData else {
+					logger.warning("audio input not ready")
+					continue
+				}
+				
+				audioInput.append(sampleBuffer)
+			}
+		}
 	}
 
 	deinit {
+		captureSession.stopRunning()
+		videoInput.markAsFinished()
+		assetWriter.finishWriting {}
+
 		delegateTask.cancel()
+		audioCaptureTask.cancel()
 	}
 
 	func start() {
 		recordingStartTime = CACurrentMediaTime()
 
-		assetWriter.initialSegmentStartTime = .zero
+		captureSession.startRunning()
+
+		assetWriter.initialSegmentStartTime = clock.time
 		assetWriter.startWriting()
-		assetWriter.startSession(atSourceTime: .zero)
+		assetWriter.startSession(atSourceTime: clock.time)
 	}
 
 	func stop() async {
 		recordingStartTime = nil
+
+		captureSession.stopRunning()
 
 		videoInput.markAsFinished()
 		await assetWriter.finishWriting()
@@ -159,8 +227,7 @@ actor HLSService {
 			throw Error.notStarted
 		}
 
-		let frameTime = CACurrentMediaTime() - recordingStartTime
-		let presentationTime = CMTimeMakeWithSeconds(frameTime, preferredTimescale: 240)
+		let presentationTime = clock.time
 		guard presentationTime != lastPresentationTime else {
 			logger.warning("next frame too soon, skipping")
 			return
@@ -176,7 +243,7 @@ actor HLSService {
 		}
 
 		guard videoInput.isReadyForMoreMediaData else {
-			logger.warning("input not ready")
+			logger.warning("video input not ready")
 			return
 		}
 
@@ -199,7 +266,10 @@ actor HLSService {
 
 		context.render(image, to: pixelBuffer)
 
-		let result = pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
+		let result = pixelBufferAdaptor.append(
+			pixelBuffer,
+			withPresentationTime: presentationTime
+		)
 		if !result {
 			logger.error("could not append pixel buffer at \(String(describing: presentationTime))")
 		}
@@ -233,4 +303,17 @@ actor HLSService {
 			)
 		}
 	}
+
+	final class CaptureAudioDataOutputSampleBufferDelegate: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
+		let continuation: AsyncStream<CMSampleBuffer>.Continuation
+
+		init(continuation: AsyncStream<CMSampleBuffer>.Continuation) {
+			self.continuation = continuation
+		}
+
+		func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+			continuation.yield(sampleBuffer)
+		}
+	}
 }
+
