@@ -6,5 +6,9 @@ struct SyphonToHLSApp: App {
 		WindowGroup {
 			ContentView()
 		}
+
+		Settings {
+			SettingsContentView()
+		}
 	}
 }
