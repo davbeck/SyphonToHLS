@@ -13,8 +13,8 @@ actor HLSService {
 		case invalidWriterStatus(AVAssetWriter.Status)
 	}
 
-	let writerDelegate: WriterDelegate
-	let captureAudioDataOutputSampleBufferDelegate: CaptureAudioDataOutputSampleBufferDelegate
+	let writerDelegate = WriterDelegate()
+	let captureAudioDataOutputSampleBufferDelegate = CaptureAudioDataOutputSampleBufferDelegate()
 
 	private let clock = CMClock.hostTimeClock
 	private let assetWriter: AVAssetWriter
@@ -23,6 +23,11 @@ actor HLSService {
 	private let captureSession = AVCaptureSession()
 	private let audioInput: AVAssetWriterInput
 
+	let writers: [HLSWriter] = [
+		HLSFileWriter(baseURL: url),
+		HLSS3Writer(),
+	]
+
 	private let context = CIContext()
 
 	private let logger = Logger(
@@ -30,15 +35,7 @@ actor HLSService {
 		category: "HLSService"
 	)
 
-	var recordingStartTime: CFTimeInterval?
-
-	private let delegateTask: Task<Void, Never>
-	private let audioCaptureTask: Task<Void, Never>
-
 	init() {
-		let (segmentStream, segmentContinuation) = AsyncStream.makeStream(of: Segment.self)
-		writerDelegate = .init(continuation: segmentContinuation)
-
 		self.assetWriter = AVAssetWriter(contentType: .mpeg4Movie)
 
 		assetWriter.shouldOptimizeForNetworkUse = true
@@ -74,77 +71,6 @@ actor HLSService {
 			]
 		)
 
-		delegateTask = Task { [logger] in
-			struct Record {
-				var index: Int
-				var duration: CMTime
-
-				var name: String {
-					"segment-\(index).m4s"
-				}
-			}
-			var lastIndex = 0
-			var records: [Record] = []
-
-			for await segment in segmentStream {
-				do {
-					switch segment.type {
-					case .initialization:
-						try segment.data.write(
-							to: url.appendingPathComponent("initialization.mp4"),
-							options: .atomic
-						)
-					case .separable:
-						guard let trackReport = segment.report?.trackReports.first else { continue }
-
-						lastIndex += 1
-
-						let record = Record(
-							index: lastIndex,
-							duration: trackReport.duration
-						)
-
-						try segment.data.write(
-							to: url.appendingPathComponent(record.name),
-							options: .atomic
-						)
-
-						records.append(record)
-
-						let segmentTemplate = records
-							.map { record in
-								"""
-								#EXTINF:\(record.duration.seconds),
-								\(record.name)
-								"""
-							}
-							.joined(separator: "\n")
-
-						let startSequence = records.first?.index ?? 1
-
-						let template = """
-						#EXTM3U
-						#EXT-X-TARGETDURATION:10
-						#EXT-X-VERSION:9
-						#EXT-X-MEDIA-SEQUENCE:\(startSequence)
-						#EXT-X-MAP:URI="initialization.mp4"
-						\(segmentTemplate)
-						"""
-
-						try template.write(
-							to: url.appendingPathComponent("live.m3u8"),
-							atomically: true,
-							encoding: .utf8
-						)
-					@unknown default:
-						logger.error("@unknown segment type \(segment.type.rawValue)")
-					}
-				} catch {
-					logger.error("failed to write segment data: \(error)")
-				}
-			}
-		}
-
 		// Audio
 
 		audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: [
@@ -155,9 +81,6 @@ actor HLSService {
 			AVEncoderBitRateKey: 160_000,
 		])
 		audioInput.expectsMediaDataInRealTime = true
-
-		let (audioCaptureStream, audioCaptureContinuation) = AsyncStream.makeStream(of: CMSampleBuffer.self)
-		captureAudioDataOutputSampleBufferDelegate = .init(continuation: audioCaptureContinuation)
 
 		captureSession.beginConfiguration()
 
@@ -174,46 +97,94 @@ actor HLSService {
 		captureSession.commitConfiguration()
 
 		assetWriter.add(audioInput)
-
-		audioCaptureTask = Task { [assetWriter, audioInput, logger] in
-			for await sampleBuffer in audioCaptureStream {
-				guard assetWriter.status == .writing else {
-					logger.warning("AVAssetWriter is not writing")
-					continue
-				}
-				
-				guard audioInput.isReadyForMoreMediaData else {
-					logger.warning("audio input not ready")
-					continue
-				}
-				
-				audioInput.append(sampleBuffer)
-			}
-		}
 	}
 
 	deinit {
 		captureSession.stopRunning()
 		videoInput.markAsFinished()
 		assetWriter.finishWriting {}
-
-		delegateTask.cancel()
-		audioCaptureTask.cancel()
 	}
 
-	func start() {
-		recordingStartTime = CACurrentMediaTime()
-
+	func start() async {
 		captureSession.startRunning()
 
 		assetWriter.initialSegmentStartTime = clock.time
 		assetWriter.startWriting()
 		assetWriter.startSession(atSourceTime: clock.time)
-	}
 
-	func stop() async {
-		recordingStartTime = nil
+		let writerOutputs = writers.map { writer in
+			(
+				writer: writer,
+				chunks: AsyncStream.makeStream(of: HLSWriterChunk.self, bufferingPolicy: .unbounded)
+			)
+		}
 
+		await withTaskGroup(of: Void.self) { [assetWriter, audioInput, logger, writerDelegate, captureAudioDataOutputSampleBufferDelegate] group in
+			group.addTask {
+				for await sampleBuffer in captureAudioDataOutputSampleBufferDelegate.stream {
+					guard assetWriter.status == .writing else {
+						logger.warning("AVAssetWriter is not writing")
+						continue
+					}
+
+					guard audioInput.isReadyForMoreMediaData else {
+						logger.warning("audio input not ready")
+						continue
+					}
+
+					audioInput.append(sampleBuffer)
+				}
+			}
+
+			for output in writerOutputs {
+				group.addTask {
+					for await chunk in output.chunks.stream {
+						do {
+							try await output.writer.write(chunk)
+						} catch {
+							logger.error("failed to write chunk \(chunk.key) to \(String(describing: output.writer)): \(error)")
+						}
+					}
+				}
+			}
+
+			group.addTask {
+				var lastIndex = 0
+				var records: [HLSRecord] = []
+
+				for await segment in writerDelegate.stream {
+					switch segment.type {
+					case .initialization:
+						for output in writerOutputs {
+							output.chunks.continuation.yield(.init(data: segment.data, key: "0.mp4", type: .mpeg4Movie))
+						}
+					case .separable:
+						guard let trackReport = segment.report?.trackReports.first else { continue }
+
+						lastIndex += 1
+
+						let record = HLSRecord(
+							index: lastIndex,
+							duration: trackReport.duration
+						)
+						records.append(record)
+
+						let template = records.hlsPlaylist()
+
+						for output in writerOutputs {
+							output.chunks.continuation.yield(.init(data: segment.data, key: record.name, type: .segmentedVideo))
+							output.chunks.continuation.yield(.init(data: Data(template.utf8), key: "live.m3u8", type: .m3uPlaylist))
+						}
+					@unknown default:
+						logger.error("@unknown segment type \(segment.type.rawValue)")
+					}
+				}
+			}
+
+			await group.waitForAll()
+		}
+
+		// cleanup
 		captureSession.stopRunning()
 
 		videoInput.markAsFinished()
@@ -223,10 +194,6 @@ actor HLSService {
 	private var lastPresentationTime: CMTime?
 
 	func writeFrame(forTexture texture: MTLTexture) throws {
-		guard let recordingStartTime else {
-			throw Error.notStarted
-		}
-
 		let presentationTime = clock.time
 		guard presentationTime != lastPresentationTime else {
 			logger.warning("next frame too soon, skipping")
@@ -282,10 +249,13 @@ actor HLSService {
 	}
 
 	final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
-		let continuation: AsyncStream<Segment>.Continuation
+		private let continuation: AsyncStream<Segment>.Continuation
+		let stream: AsyncStream<Segment>
 
-		init(continuation: AsyncStream<Segment>.Continuation) {
-			self.continuation = continuation
+		override init() {
+			(stream, continuation) = AsyncStream.makeStream()
+
+			super.init()
 		}
 
 		func assetWriter(
@@ -305,10 +275,13 @@ actor HLSService {
 	}
 
 	final class CaptureAudioDataOutputSampleBufferDelegate: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
-		let continuation: AsyncStream<CMSampleBuffer>.Continuation
+		private let continuation: AsyncStream<CMSampleBuffer>.Continuation
+		let stream: AsyncStream<CMSampleBuffer>
 
-		init(continuation: AsyncStream<CMSampleBuffer>.Continuation) {
-			self.continuation = continuation
+		override init() {
+			(stream, continuation) = AsyncStream.makeStream()
+
+			super.init()
 		}
 
 		func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
@@ -316,4 +289,3 @@ actor HLSService {
 		}
 	}
 }
-

@@ -46,21 +46,30 @@ final class ProfileSession {
 		guard await AVCaptureDevice.requestAccess(for: .audio) else { return }
 
 		let hlsService = HLSService()
-		await hlsService.start()
 
 		let client = SyphonMetalClient(
 			server,
 			device: device
 		)
 
-		do {
-			for await frame in client.frames {
-				self.texture = frame
-
-				try await hlsService.writeFrame(forTexture: frame)
+		await withTaskGroup(of: Void.self) { group in
+			group.addTask {
+				await hlsService.start()
 			}
-		} catch {
-			print(error)
+			
+			group.addTask { @MainActor in
+				do {
+					for await frame in client.frames {
+						self.texture = frame
+
+						try await hlsService.writeFrame(forTexture: frame)
+					}
+				} catch {
+					print(error)
+				}
+			}
+			
+			await group.waitForAll()
 		}
 	}
 }

@@ -1,18 +1,15 @@
 import SwiftUI
 
 struct SettingsContentView: View {
-	@AppStorage("AWSRegion") private var awsRegion: String = ""
-	@AppStorage("AWSS3Bucket") private var awsS3Bucket: String = ""
-	@AppStorage("AWSClientKey") private var awsClientKey: String = ""
-	@AppStorage("AWSClientSecret") private var awsClientSecret: String = ""
+	@State private var appStorage = AppStorage.shared
 
 	var body: some View {
 		Form {
 			Section("AWS Credentials") {
-				TextField("Region", text: $awsRegion)
-				TextField("S3 Bucket", text: $awsS3Bucket)
-				TextField("Client Key", text: $awsClientKey)
-				TextField("Client Secret", text: $awsClientSecret)
+				TextField("Region", text: $appStorage.awsRegion)
+				TextField("S3 Bucket", text: $appStorage.awsS3Bucket)
+				TextField("Client Key", text: $appStorage.awsClientKey)
+				TextField("Client Secret", text: $appStorage.awsClientSecret)
 			}
 		}
 		.padding()

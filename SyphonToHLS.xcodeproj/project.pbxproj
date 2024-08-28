@@ -7,8 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 111477002C7E90C600C4E395 /* KeychainSwift */; };
 		1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; };
 		1127AC512C76375D004C5D8C /* Syphon.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		11A3E9962C7E17B400FA30D6 /* SotoS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 11A3E9952C7E17B400FA30D6 /* SotoS3 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,8 +51,18 @@
 		1127AC4E2C763756004C5D8C /* Syphon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Syphon.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		1114770A2C7F764500C4E395 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 1127AC1A2C7636F8004C5D8C /* SyphonToHLS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		1127AC1D2C7636F8004C5D8C /* SyphonToHLS */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLS; sourceTree = "<group>"; };
+		1127AC1D2C7636F8004C5D8C /* SyphonToHLS */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (1114770A2C7F764500C4E395 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLS; sourceTree = "<group>"; };
 		1127AC2F2C7636FA004C5D8C /* SyphonToHLSTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLSTests; sourceTree = "<group>"; };
 		1127AC392C7636FA004C5D8C /* SyphonToHLSUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLSUITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -60,7 +72,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */,
 				1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */,
+				11A3E9962C7E17B400FA30D6 /* SotoS3 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -123,6 +137,8 @@
 			);
 			name = SyphonToHLS;
 			packageProductDependencies = (
+				11A3E9952C7E17B400FA30D6 /* SotoS3 */,
+				111477002C7E90C600C4E395 /* KeychainSwift */,
 			);
 			productName = SyphonToHLS;
 			productReference = 1127AC1B2C7636F8004C5D8C /* SyphonToHLS.app */;
@@ -207,6 +223,10 @@
 				Base,
 			);
 			mainGroup = 1127AC122C7636F8004C5D8C;
+			packageReferences = (
+				11A3E9942C7E17B400FA30D6 /* XCRemoteSwiftPackageReference "soto" */,
+				111476FF2C7E81B900C4E395 /* XCRemoteSwiftPackageReference "keychain-swift" */,
+			);
 			productRefGroup = 1127AC1C2C7636F8004C5D8C /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -417,6 +437,7 @@
 					"$(PROJECT_DIR)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SyphonToHLS/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is used for streaming input audio.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -452,6 +473,7 @@
 					"$(PROJECT_DIR)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SyphonToHLS/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is used for streaming input audio.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -575,6 +597,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		111476FF2C7E81B900C4E395 /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/evgenyneu/keychain-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 24.0.0;
+			};
+		};
+		11A3E9942C7E17B400FA30D6 /* XCRemoteSwiftPackageReference "soto" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/soto-project/soto.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		111477002C7E90C600C4E395 /* KeychainSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 111476FF2C7E81B900C4E395 /* XCRemoteSwiftPackageReference "keychain-swift" */;
+			productName = KeychainSwift;
+		};
+		11A3E9952C7E17B400FA30D6 /* SotoS3 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 11A3E9942C7E17B400FA30D6 /* XCRemoteSwiftPackageReference "soto" */;
+			productName = SotoS3;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1127AC132C7636F8004C5D8C /* Project object */;
 }
