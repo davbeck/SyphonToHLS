@@ -40,7 +40,7 @@ actor HLSService {
 
 		assetWriter.shouldOptimizeForNetworkUse = true
 		assetWriter.outputFileTypeProfile = .mpeg4AppleHLS
-		assetWriter.preferredOutputSegmentInterval = CMTime(seconds: 1, preferredTimescale: 1)
+		assetWriter.preferredOutputSegmentInterval = CMTime(seconds: 6, preferredTimescale: 1)
 		assetWriter.delegate = writerDelegate
 
 		// Video
@@ -52,10 +52,10 @@ actor HLSService {
 				AVVideoWidthKey: 1920,
 				AVVideoHeightKey: 1080,
 
-//				AVVideoCompressionPropertiesKey: [
-//					kVTCompressionPropertyKey_AverageBitRate: 6_000_000,
-//					kVTCompressionPropertyKey_ProfileLevel: kVTProfileLevel_H264_High_4_1,
-//				],
+				AVVideoCompressionPropertiesKey: [ // 975 000
+					kVTCompressionPropertyKey_AverageBitRate: 1_000_000,
+					kVTCompressionPropertyKey_ProfileLevel: kVTProfileLevel_H264_High_4_1
+				],
 			]
 		)
 		videoInput.expectsMediaDataInRealTime = true
