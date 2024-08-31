@@ -226,6 +226,7 @@
 			packageReferences = (
 				11A3E9942C7E17B400FA30D6 /* XCRemoteSwiftPackageReference "soto" */,
 				111476FF2C7E81B900C4E395 /* XCRemoteSwiftPackageReference "keychain-swift" */,
+				111478352C81278100C4E395 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 			);
 			productRefGroup = 1127AC1C2C7636F8004C5D8C /* Products */;
 			projectDirPath = "";
@@ -605,6 +606,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 24.0.0;
+			};
+		};
+		111478352C81278100C4E395 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SFSafeSymbols/SFSafeSymbols";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.3.0;
 			};
 		};
 		11A3E9942C7E17B400FA30D6 /* XCRemoteSwiftPackageReference "soto" */ = {

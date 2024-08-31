@@ -35,8 +35,8 @@ struct AppStorageCredentialProvider: CredentialProvider {
 	func getCredential(logger: Logging.Logger) async throws -> any SotoSignerV4.Credential {
 		let appStorage = AppStorage.shared
 		return StaticCredential(
-			accessKeyId: appStorage.awsClientKey,
-			secretAccessKey: appStorage.awsClientSecret
+			accessKeyId: appStorage[.awsClientKey],
+			secretAccessKey: appStorage[.awsClientSecret]
 		)
 	}
 }
@@ -59,10 +59,10 @@ struct HLSS3Writer: HLSWriter {
 	@MainActor
 	func write(_ chunk: HLSWriterChunk) async throws {
 		let appStorage = AppStorage.shared
-		
-		let bucket: String = appStorage.awsS3Bucket
-		
-		let s3 = S3(client: client, region: .init(awsRegionName: appStorage.awsRegion))
+
+		let bucket: String = appStorage[.awsS3Bucket]
+
+		let s3 = S3(client: client, region: .init(awsRegionName: appStorage[.awsRegion]))
 
 		let putObjectRequest = S3.PutObjectRequest(
 			body: .init(bytes: chunk.data),

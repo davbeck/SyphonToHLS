@@ -6,10 +6,10 @@ struct SettingsContentView: View {
 	var body: some View {
 		Form {
 			Section("AWS Credentials") {
-				TextField("Region", text: $appStorage.awsRegion)
-				TextField("S3 Bucket", text: $appStorage.awsS3Bucket)
-				TextField("Client Key", text: $appStorage.awsClientKey)
-				TextField("Client Secret", text: $appStorage.awsClientSecret)
+				TextField("Region", text: $appStorage[.awsRegion])
+				TextField("S3 Bucket", text: $appStorage[.awsS3Bucket])
+				TextField("Client Key", text: $appStorage[.awsClientKey])
+				TextField("Client Secret", text: $appStorage[.awsClientSecret])
 			}
 		}
 		.padding()
