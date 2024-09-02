@@ -19,12 +19,20 @@ struct HLSFileWriter: HLSWriter {
 	func write(_ chunk: HLSWriterChunk) async throws {
 		try await withCheckedThrowingContinuation { continuation in
 			DispatchQueue.global().async {
-				continuation.resume(with: Result {
-					try chunk.data.write(
-						to: baseURL.appendingPathComponent(chunk.key),
-						options: .atomic
-					)
-				})
+				continuation.resume(
+					with: Result {
+						var url = baseURL.appendingPathComponent(chunk.key)
+						try? FileManager.default.createDirectory(
+							at: url.deletingLastPathComponent(),
+							withIntermediateDirectories: true
+						)
+
+						try chunk.data.write(
+							to: url,
+							options: .atomic
+						)
+					}
+				)
 			}
 		}
 	}

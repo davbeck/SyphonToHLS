@@ -10,12 +10,18 @@ struct HLSRecord {
 }
 
 extension Collection where Element == HLSRecord {
-	func hlsPlaylist() -> String {
+	func hlsPlaylist(prefix: String?) -> String {
+		let prefix = if let prefix {
+			prefix + "/"
+		} else {
+			""
+		}
+		
 		let segmentTemplate = self
 			.map { record in
 				"""
 				#EXTINF:\(record.duration.seconds),
-				\(record.name)
+				\(prefix)\(record.name)
 				"""
 			}
 			.joined(separator: "\n")
@@ -27,7 +33,7 @@ extension Collection where Element == HLSRecord {
 		#EXT-X-TARGETDURATION:10
 		#EXT-X-VERSION:9
 		#EXT-X-MEDIA-SEQUENCE:\(startSequence)
-		#EXT-X-MAP:URI="0.mp4"
+		#EXT-X-MAP:URI="\(prefix)0.mp4"
 		\(segmentTemplate)
 		"""
 	}

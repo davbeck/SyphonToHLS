@@ -36,9 +36,15 @@ actor HLSService {
 		subsystem: Bundle(for: HLSService.self).bundleIdentifier ?? "",
 		category: "HLSService"
 	)
+	
+	private let prefix: String
 
 	init(syphonClient: SyphonMetalClient?, audioDevice: AVCaptureDevice?) {
 		self.syphonClient = syphonClient
+		
+		let dateFormatter = DateFormatter()
+		dateFormatter.dateFormat = "yyyy-MM-dd HH.mm"
+		prefix = dateFormatter.string(from: .now)
 
 		self.assetWriter = AVAssetWriter(contentType: .mpeg4Movie)
 
@@ -217,7 +223,7 @@ actor HLSService {
 				}
 			}
 
-			group.addTask {
+			group.addTask { [prefix] in
 				var lastIndex = 0
 				var records: [HLSRecord] = []
 
@@ -225,7 +231,7 @@ actor HLSService {
 					switch segment.type {
 					case .initialization:
 						for output in writerOutputs {
-							output.chunks.continuation.yield(.init(data: segment.data, key: "0.mp4", type: .mpeg4Movie))
+							output.chunks.continuation.yield(.init(data: segment.data, key: "\(prefix)/0.mp4", type: .mpeg4Movie))
 						}
 					case .separable:
 						guard let trackReport = segment.report?.trackReports.first else { continue }
@@ -238,11 +244,28 @@ actor HLSService {
 						)
 						records.append(record)
 
-						let template = records.hlsPlaylist()
-
 						for output in writerOutputs {
-							output.chunks.continuation.yield(.init(data: segment.data, key: record.name, type: .segmentedVideo))
-							output.chunks.continuation.yield(.init(data: Data(template.utf8), key: "live.m3u8", type: .m3uPlaylist))
+							output.chunks.continuation.yield(
+								.init(
+									data: segment.data,
+									key: prefix + "/" + record.name,
+									type: .segmentedVideo
+								)
+							)
+							output.chunks.continuation.yield(
+								.init(
+									data: Data(records.hlsPlaylist(prefix: prefix).utf8),
+									key: "live.m3u8",
+									type: .m3uPlaylist
+								)
+							)
+							output.chunks.continuation.yield(
+								.init(
+									data: Data(records.hlsPlaylist(prefix: nil).utf8),
+									key: prefix + "/play.m3u8",
+									type: .m3uPlaylist
+								)
+							)
 						}
 					@unknown default:
 						logger.error("@unknown segment type \(segment.type.rawValue)")
