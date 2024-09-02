@@ -2,10 +2,14 @@ import AVFoundation
 import Metal
 import Observation
 
-extension AppStorageKey {
+extension AppStorageKey where Value == String {
 	static let syphonServerName = AppStorageKey(key: "syphonServerName")
 	static let syphonServerApp = AppStorageKey(key: "syphonServerApp")
 	static let audioDeviceID = AppStorageKey(key: "audioDeviceID")
+}
+
+extension AppStorageKey where Value == Bool {
+	static let isRunning = AppStorageKey(key: "isRunning")
 }
 
 @MainActor
@@ -54,13 +58,16 @@ final class ProfileSession {
 
 	func start() async {
 		guard await AVCaptureDevice.requestAccess(for: .audio) else { return }
-		
+
 		var currentTask: Task<Void, Never>?
 		let currentServer = AsyncStream.makeObservationStream {
-			(self.syphonServer, self.audioDevice)
+			(self.appStorage[.isRunning], self.syphonServer, self.audioDevice)
 		}
-		for await (syphonServer, audioDevice) in currentServer {
+		for await (isRunning, syphonServer, audioDevice) in currentServer {
+			print("isRunning", isRunning)
 			currentTask?.cancel()
+
+			guard isRunning else { continue }
 
 			currentTask = Task {
 				await self.start(syphonServer: syphonServer, audioDevice: audioDevice)
@@ -71,9 +78,9 @@ final class ProfileSession {
 	func start(syphonServer: ServerDescription?, audioDevice: AVCaptureDevice?) async {
 		isRunning = true
 		defer { isRunning = false }
-		
+
 		guard syphonServer != nil || audioDevice != nil else { return }
-		
+
 		let client = syphonServer.map {
 			SyphonMetalClient($0, device: device)
 		}

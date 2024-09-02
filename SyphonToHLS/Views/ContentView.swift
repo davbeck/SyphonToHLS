@@ -1,5 +1,5 @@
-import SwiftUI
 import AVFoundation
+import SwiftUI
 import Syphon
 
 struct ContentView: View {
@@ -23,7 +23,7 @@ struct ContentView: View {
 						.tag(Optional.some(server.id))
 				}
 			}
-			
+
 			Picker("Audio Source", selection: $session.audioDevice) {
 				Text("None")
 					.tag(AVCaptureDevice?.none)
@@ -43,6 +43,20 @@ struct ContentView: View {
 				device: session.device,
 				texture: session.texture
 			)
+
+			HStack {
+				Spacer()
+
+				Button {
+					appStorage[.isRunning].toggle()
+				} label: {
+					if appStorage[.isRunning] {
+						Text("Stop")
+					} else {
+						Text("Start")
+					}
+				}
+			}
 		}
 		.padding()
 		.task {

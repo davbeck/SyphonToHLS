@@ -113,13 +113,6 @@ actor HLSService {
 		}
 	}
 
-	deinit {
-		captureSession.stopRunning()
-		audioInput?.markAsFinished()
-		videoInput?.markAsFinished()
-		assetWriter.finishWriting {}
-	}
-
 	func start() async {
 		captureSession.startRunning()
 
@@ -265,7 +258,8 @@ actor HLSService {
 
 		audioInput?.markAsFinished()
 		videoInput?.markAsFinished()
-		await assetWriter.finishWriting()
+		assetWriter.endSession(atSourceTime: clock.time)
+		assetWriter.cancelWriting()
 	}
 
 	struct Segment {
