@@ -43,7 +43,7 @@ actor HLSService {
 		self.syphonClient = syphonClient
 		
 		let dateFormatter = DateFormatter()
-		dateFormatter.dateFormat = "yyyy-MM-dd HH.mm"
+		dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm"
 		prefix = dateFormatter.string(from: .now)
 
 		self.assetWriter = AVAssetWriter(contentType: .mpeg4Movie)
