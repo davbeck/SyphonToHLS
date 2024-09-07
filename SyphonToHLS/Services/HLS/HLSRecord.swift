@@ -30,7 +30,7 @@ extension Collection where Element == HLSRecord {
 
 		return """
 		#EXTM3U
-		#EXT-X-TARGETDURATION:10
+		#EXT-X-TARGETDURATION:1
 		#EXT-X-VERSION:9
 		#EXT-X-MEDIA-SEQUENCE:\(startSequence)
 		#EXT-X-MAP:URI="\(prefix)0.mp4"
