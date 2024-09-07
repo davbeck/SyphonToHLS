@@ -153,12 +153,12 @@ actor HLSService {
 			}
 
 			if let videoInput, let syphonClient, let pixelBufferAdaptor {
-				group.addTask { [syphonClient, clock, context] in
+				group.addTask { [syphonClient, context] in
 					var lastPresentationTime: CMTime?
 
-					for await texture in syphonClient.frames {
+					for await frame in syphonClient.frames {
 						do {
-							let presentationTime = clock.time
+							let presentationTime = CMTimeConvertScale(frame.time, timescale: 30, method: .default)
 							guard presentationTime != lastPresentationTime else {
 								logger.warning("next frame too soon, skipping")
 								return
@@ -178,7 +178,7 @@ actor HLSService {
 								return
 							}
 
-							guard let image = CIImage(mtlTexture: texture) else {
+							guard let image = CIImage(mtlTexture: frame.texture) else {
 								logger.error("invalid image")
 								return
 							}

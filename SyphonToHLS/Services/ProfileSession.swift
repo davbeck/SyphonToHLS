@@ -95,7 +95,7 @@ final class ProfileSession {
 			if let client {
 				group.addTask { @MainActor in
 					for await frame in client.frames {
-						self.texture = frame
+						self.texture = frame.texture
 					}
 				}
 			}
