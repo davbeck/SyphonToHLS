@@ -8,7 +8,7 @@ struct MetalView: NSViewRepresentable {
 	typealias NSViewType = MTKView
 
 	var device: (any MTLDevice)? = MTLCreateSystemDefaultDevice()
-	var texture: MTLTexture?
+	var image: CIImage?
 
 	func makeCoordinator() -> Coordinator {
 		Coordinator(self)
@@ -35,7 +35,7 @@ struct MetalView: NSViewRepresentable {
 		context.coordinator.parent = self
 		context.coordinator.mtkView = view
 		
-		view.isPaused = texture == nil
+		view.isPaused = image == nil
 	}
 
 	class Coordinator: NSObject, MTKViewDelegate {
@@ -72,11 +72,10 @@ struct MetalView: NSViewRepresentable {
 
 		func draw(in view: MTKView) {
 			guard
-				let texture = parent.texture,
+				let inputImage = parent.image,
 				let metalCommandQueue,
 				let ciContext,
 				let drawable = view.currentDrawable,
-				let inputImage = CIImage(mtlTexture: texture),
 				let commandBuffer = metalCommandQueue.makeCommandBuffer()
 			else {
 				return

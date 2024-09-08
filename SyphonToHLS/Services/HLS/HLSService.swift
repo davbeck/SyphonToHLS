@@ -13,7 +13,7 @@ actor HLSService {
 		case invalidWriterStatus(AVAssetWriter.Status)
 	}
 
-	let syphonClient: SyphonMetalClient?
+	let syphonClient: SyphonCoreImageClient?
 
 	let writerDelegate = WriterDelegate()
 	let captureAudioDataOutputSampleBufferDelegate = CaptureAudioDataOutputSampleBufferDelegate()
@@ -39,7 +39,7 @@ actor HLSService {
 	
 	private let prefix: String
 
-	init(syphonClient: SyphonMetalClient?, audioDevice: AVCaptureDevice?) {
+	init(syphonClient: SyphonCoreImageClient?, audioDevice: AVCaptureDevice?) {
 		self.syphonClient = syphonClient
 		
 		let dateFormatter = DateFormatter()
@@ -178,10 +178,7 @@ actor HLSService {
 								continue
 							}
 
-							guard let image = CIImage(mtlTexture: frame.texture) else {
-								logger.error("invalid image")
-								continue
-							}
+							let image = frame.image
 
 							guard let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool else {
 								logger.error("Pixel buffer asset writer input did not have a pixel buffer pool available; cannot retrieve frame")

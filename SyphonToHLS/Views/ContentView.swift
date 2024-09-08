@@ -41,7 +41,7 @@ struct ContentView: View {
 
 			MetalView(
 				device: session.device,
-				texture: session.texture
+				image: session.image
 			)
 
 			HStack {

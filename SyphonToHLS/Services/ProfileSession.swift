@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreImage
 import Metal
 import Observation
 
@@ -22,7 +23,7 @@ final class ProfileSession {
 	let syphonService = SyphonService()
 	let audioSourceService = AudioSourceService()
 
-	var texture: MTLTexture?
+	var image: CIImage?
 
 	var syphonServerID: ServerDescription.ID? {
 		get {
@@ -82,7 +83,7 @@ final class ProfileSession {
 		guard syphonServer != nil || audioDevice != nil else { return }
 
 		let client = syphonServer.map {
-			SyphonMetalClient($0, device: device)
+			SyphonCoreImageClient($0, device: device)
 		}
 
 		let hlsService = HLSService(syphonClient: client, audioDevice: audioDevice)
@@ -95,7 +96,7 @@ final class ProfileSession {
 			if let client {
 				group.addTask { @MainActor in
 					for await frame in client.frames {
-						self.texture = frame.texture
+						self.image = frame.image
 					}
 				}
 			}

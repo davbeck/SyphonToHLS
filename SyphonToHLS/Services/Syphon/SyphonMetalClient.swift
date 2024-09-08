@@ -1,13 +1,14 @@
 import Cocoa
 import Combine
+import CoreImage
 import CoreMedia
 import Metal
 import Syphon
 
-class SyphonMetalClient: Syphon.SyphonMetalClient {
+class SyphonCoreImageClient: Syphon.SyphonMetalClient {
 	struct Frame {
 		var time: CMTime
-		var texture: any MTLTexture
+		var image: CIImage
 	}
 
 	let clock = CMClock.hostTimeClock
@@ -27,9 +28,15 @@ class SyphonMetalClient: Syphon.SyphonMetalClient {
 			options: options,
 			newFrameHandler: { [clock] client in
 				let time = clock.time
-				guard let texture = client.newFrameImage() else { return }
+				guard
+					let texture = client.newFrameImage(),
+					let image = CIImage(
+						mtlTexture: texture,
+						options: [.colorSpace: CGColorSpaceCreateDeviceRGB()]
+					)
+				else { return }
 
-				continuation.yield(Frame(time: time, texture: texture))
+				continuation.yield(Frame(time: time, image: image))
 			}
 		)
 	}
@@ -49,7 +56,7 @@ final class SharedStream<Element>: AsyncSequence, @unchecked Sendable {
 						continuation.yield(element)
 					}
 				}
-				
+
 				let continuations = self.lock.withLock { self.continuations }
 				for continuation in continuations {
 					continuation.finish()
