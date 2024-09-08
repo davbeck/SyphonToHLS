@@ -161,7 +161,7 @@ actor HLSService {
 							let presentationTime = CMTimeConvertScale(frame.time, timescale: 30, method: .default)
 							guard presentationTime != lastPresentationTime else {
 								logger.warning("next frame too soon, skipping")
-								return
+								continue
 							}
 							lastPresentationTime = presentationTime
 
@@ -175,24 +175,24 @@ actor HLSService {
 
 							guard videoInput.isReadyForMoreMediaData else {
 								logger.warning("video input not ready")
-								return
+								continue
 							}
 
 							guard let image = CIImage(mtlTexture: frame.texture) else {
 								logger.error("invalid image")
-								return
+								continue
 							}
 
 							guard let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool else {
 								logger.error("Pixel buffer asset writer input did not have a pixel buffer pool available; cannot retrieve frame")
-								return
+								continue
 							}
 
 							var maybePixelBuffer: CVPixelBuffer?
 							let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &maybePixelBuffer)
 							guard let pixelBuffer = maybePixelBuffer, status == kCVReturnSuccess else {
 								logger.error("Could not get pixel buffer from asset writer input; dropping frame (status \(status))")
-								return
+								continue
 							}
 
 							context.render(image, to: pixelBuffer)
