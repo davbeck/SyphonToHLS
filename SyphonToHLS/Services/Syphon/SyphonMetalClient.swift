@@ -39,13 +39,25 @@ final class SharedStream<Element>: AsyncSequence, @unchecked Sendable {
 	private let lock = NSRecursiveLock()
 	private var continuations: [AsyncStream<Element>.Continuation] = []
 
-	init(_ upstream: some AsyncSequence<Element, Never>) {
+	init<Sequence: AsyncSequence>(_ upstream: Sequence) where Sequence.Element == Element {
 		Task {
-			for await element in upstream {
-				let continuations = self.lock.withLock { self.continuations }
+			do {
+				for try await element in upstream {
+					let continuations = self.lock.withLock { self.continuations }
 
+					for continuation in continuations {
+						continuation.yield(element)
+					}
+				}
+				
+				let continuations = self.lock.withLock { self.continuations }
 				for continuation in continuations {
-					continuation.yield(element)
+					continuation.finish()
+				}
+			} catch {
+				let continuations = self.lock.withLock { self.continuations }
+				for continuation in continuations {
+					continuation.finish()
 				}
 			}
 		}
@@ -61,7 +73,7 @@ final class SharedStream<Element>: AsyncSequence, @unchecked Sendable {
 	}
 }
 
-extension AsyncSequence where Failure == Never {
+extension AsyncSequence {
 	func share() -> SharedStream<Element> {
 		SharedStream(self)
 	}

@@ -21,7 +21,7 @@ struct HLSFileWriter: HLSWriter {
 			DispatchQueue.global().async {
 				continuation.resume(
 					with: Result {
-						var url = baseURL.appendingPathComponent(chunk.key)
+						let url = baseURL.appendingPathComponent(chunk.key)
 						try? FileManager.default.createDirectory(
 							at: url.deletingLastPathComponent(),
 							withIntermediateDirectories: true
