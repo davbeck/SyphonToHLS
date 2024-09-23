@@ -17,6 +17,9 @@ extension AppStorageKey where Value == Bool {
 @Observable
 final class ProfileSession {
 	let appStorage = AppStorage.shared
+	
+	@ObservationIgnored
+	lazy var webServer = WebServer(directory: self.url)
 
 	let device = MTLCreateSystemDefaultDevice()!
 
@@ -24,6 +27,8 @@ final class ProfileSession {
 	let audioSourceService = AudioSourceService()
 
 	var image: CIImage?
+	
+	var url = URL.moviesDirectory.appendingPathComponent("Livestream")
 	
 	static let shared = ProfileSession()
 
@@ -60,6 +65,8 @@ final class ProfileSession {
 	var isRunning = false
 
 	func start() async {
+		await webServer.start()
+		
 		guard await AVCaptureDevice.requestAccess(for: .audio) else { return }
 
 		var currentTask: Task<Void, Never>?
@@ -88,7 +95,7 @@ final class ProfileSession {
 			SyphonCoreImageClient($0, device: device)
 		}
 
-		let hlsService = HLSService(syphonClient: client, audioDevice: audioDevice)
+		let hlsService = HLSService(url: url, syphonClient: client, audioDevice: audioDevice)
 
 		await withTaskGroup(of: Void.self) { group in
 			group.addTask {

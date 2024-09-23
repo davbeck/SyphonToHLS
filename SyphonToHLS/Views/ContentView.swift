@@ -24,9 +24,6 @@ struct ContentView: View {
 			}
 		}
 		.padding()
-		.task {
-			await session.start()
-		}
 	}
 }
 

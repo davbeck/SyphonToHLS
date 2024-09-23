@@ -3,8 +3,6 @@ import CoreImage
 import OSLog
 import VideoToolbox
 
-private let url = URL.moviesDirectory.appendingPathComponent("Livestream")
-
 private let queue = DispatchQueue(label: "hls")
 
 actor HLSService {
@@ -25,10 +23,7 @@ actor HLSService {
 	private let captureSession = AVCaptureSession()
 	private let audioInput: AVAssetWriterInput?
 
-	let writers: [HLSWriter] = [
-		HLSFileWriter(baseURL: url),
-		HLSS3Writer(),
-	]
+	let writers: [HLSWriter]
 
 	private let context = CIContext()
 
@@ -36,12 +31,17 @@ actor HLSService {
 		subsystem: Bundle(for: HLSService.self).bundleIdentifier ?? "",
 		category: "HLSService"
 	)
-	
+
 	private let prefix: String
 
-	init(syphonClient: SyphonCoreImageClient?, audioDevice: AVCaptureDevice?) {
+	init(url: URL, syphonClient: SyphonCoreImageClient?, audioDevice: AVCaptureDevice?) {
+		self.writers = [
+			HLSFileWriter(baseURL: url),
+			HLSS3Writer(),
+		]
+
 		self.syphonClient = syphonClient
-		
+
 		let dateFormatter = DateFormatter()
 		dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm"
 		prefix = dateFormatter.string(from: .now)
@@ -80,7 +80,7 @@ actor HLSService {
 					kCVPixelBufferMetalCompatibilityKey as String: true,
 				]
 			)
-			
+
 			self.videoInput = videoInput
 		} else {
 			self.videoInput = nil

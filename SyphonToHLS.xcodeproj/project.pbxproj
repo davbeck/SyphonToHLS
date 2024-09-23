@@ -11,6 +11,7 @@
 		1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; };
 		1127AC512C76375D004C5D8C /* Syphon.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		11A3E9962C7E17B400FA30D6 /* SotoS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 11A3E9952C7E17B400FA30D6 /* SotoS3 */; };
+		11D52B882CA0EBAF00EBFB73 /* NWHTTPServer in Frameworks */ = {isa = PBXBuildFile; productRef = 11D52B872CA0EBAF00EBFB73 /* NWHTTPServer */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				11D52B882CA0EBAF00EBFB73 /* NWHTTPServer in Frameworks */,
 				111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */,
 				1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */,
 				11A3E9962C7E17B400FA30D6 /* SotoS3 in Frameworks */,
@@ -102,6 +104,7 @@
 				1127AC1D2C7636F8004C5D8C /* SyphonToHLS */,
 				1127AC2F2C7636FA004C5D8C /* SyphonToHLSTests */,
 				1127AC392C7636FA004C5D8C /* SyphonToHLSUITests */,
+				11D52B862CA0EBAF00EBFB73 /* Frameworks */,
 				1127AC1C2C7636F8004C5D8C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -114,6 +117,13 @@
 				1127AC362C7636FA004C5D8C /* SyphonToHLSUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		11D52B862CA0EBAF00EBFB73 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -139,6 +149,7 @@
 			packageProductDependencies = (
 				11A3E9952C7E17B400FA30D6 /* SotoS3 */,
 				111477002C7E90C600C4E395 /* KeychainSwift */,
+				11D52B872CA0EBAF00EBFB73 /* NWHTTPServer */,
 			);
 			productName = SyphonToHLS;
 			productReference = 1127AC1B2C7636F8004C5D8C /* SyphonToHLS.app */;
@@ -227,6 +238,7 @@
 				11A3E9942C7E17B400FA30D6 /* XCRemoteSwiftPackageReference "soto" */,
 				111476FF2C7E81B900C4E395 /* XCRemoteSwiftPackageReference "keychain-swift" */,
 				111478352C81278100C4E395 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
+				11D52B4C2CA0EB7300EBFB73 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */,
 			);
 			productRefGroup = 1127AC1C2C7636F8004C5D8C /* Products */;
 			projectDirPath = "";
@@ -624,6 +636,14 @@
 				minimumVersion = 7.0.0;
 			};
 		};
+		11D52B4C2CA0EB7300EBFB73 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/helje5/NWHTTPProtocol.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -636,6 +656,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 11A3E9942C7E17B400FA30D6 /* XCRemoteSwiftPackageReference "soto" */;
 			productName = SotoS3;
+		};
+		11D52B872CA0EBAF00EBFB73 /* NWHTTPServer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 11D52B4C2CA0EB7300EBFB73 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */;
+			productName = NWHTTPServer;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

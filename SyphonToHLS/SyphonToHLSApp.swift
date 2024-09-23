@@ -26,6 +26,12 @@ struct MenuBarLabel: View {
 @main
 struct SyphonToHLSApp: App {
 	@Environment(\.openWindow) private var openWindow
+	
+	init() {
+		Task {
+			await ProfileSession.shared.start()
+		}
+	}
 
 	var body: some Scene {
 		MenuBarExtra {

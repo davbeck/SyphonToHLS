@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
+    />
+    <title>Livestream</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      #page {
+        max-width: 900px;
+        margin: auto;
+
+        font-family: "Montserrat", sans-serif;
+        font-optical-sizing: auto;
+        font-style: normal;
+      }
+
+      video {
+        background-color: black;
+        border-radius: 10px;
+        width: 100%;
+        max-height: 80vh;
+        aspect-ratio: 16 / 9;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+
+    <div id="page">
+      <h1>Livestream</h1>
+
+      <video id="video" controls></video>
+    </div>
+
+    <script>
+      if (Hls.isSupported()) {
+        var video = document.getElementById("video");
+
+        // If you are using the ESM version of the library (hls.mjs), you
+        // should specify the "workerPath" config option here if you want
+        // web workers to be used. Note that bundlers (such as webpack)
+        // will likely use the ESM version by default.
+        var hls = new Hls({
+          autoStartLoad: true,
+        });
+
+        // bind them together
+        hls.attachMedia(video);
+        // MEDIA_ATTACHED event is fired by hls object once MediaSource is ready
+        console.log("on MEDIA_ATTACHED");
+        hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+          console.log("video and hls.js are now bound together !");
+        });
+        console.log("on MANIFEST_PARSED");
+        hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+          console.log(
+            "manifest loaded, found " + data.levels.length + " quality level"
+          );
+
+          //   video.play();
+        });
+        console.log("load source");
+
+        hls.loadSource("/live.m3u8");
+        // bind them together
+        hls.attachMedia(video);
+      }
+    </script>
+  </body>
+</html>
