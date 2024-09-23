@@ -24,6 +24,8 @@ final class ProfileSession {
 	let audioSourceService = AudioSourceService()
 
 	var image: CIImage?
+	
+	static let shared = ProfileSession()
 
 	var syphonServerID: ServerDescription.ID? {
 		get {
