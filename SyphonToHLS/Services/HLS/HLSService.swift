@@ -160,7 +160,7 @@ actor HLSService {
 						do {
 							let presentationTime = CMTimeConvertScale(frame.time, timescale: 30, method: .default)
 							guard presentationTime != lastPresentationTime else {
-								logger.warning("next frame too soon, skipping")
+//								logger.warning("next frame too soon, skipping")
 								continue
 							}
 							lastPresentationTime = presentationTime

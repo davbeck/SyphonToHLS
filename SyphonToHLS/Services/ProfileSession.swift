@@ -28,7 +28,9 @@ final class ProfileSession {
 
 	var image: CIImage?
 	
-	var url = URL.moviesDirectory.appendingPathComponent("Livestream")
+	var url = URL.temporaryDirectory
+		.appendingPathComponent(Bundle.main.bundleIdentifier!)
+		.appendingPathComponent("Livestream")
 	
 	static let shared = ProfileSession()
 
