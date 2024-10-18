@@ -22,6 +22,8 @@ actor HLSService {
 	private let pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor?
 	private let captureSession = AVCaptureSession()
 	private let audioInput: AVAssetWriterInput?
+	
+	private let start: Date
 
 	let writers: [HLSWriter]
 
@@ -35,6 +37,8 @@ actor HLSService {
 	private let prefix: String
 
 	init(url: URL, syphonClient: SyphonCoreImageClient?, audioDevice: AVCaptureDevice?) {
+		self.start = .now
+		
 		self.writers = [
 			HLSFileWriter(baseURL: url),
 			HLSS3Writer(),
@@ -44,7 +48,7 @@ actor HLSService {
 
 		let dateFormatter = DateFormatter()
 		dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm"
-		prefix = dateFormatter.string(from: .now)
+		prefix = dateFormatter.string(from: start)
 
 		self.assetWriter = AVAssetWriter(contentType: .mpeg4Movie)
 
@@ -221,7 +225,7 @@ actor HLSService {
 			}
 
 			group.addTask { [prefix] in
-				var lastIndex = 0
+				var lastIndex = Int(self.start.timeIntervalSince1970)
 				var records: [HLSRecord] = []
 
 				for await segment in writerDelegate.stream {
