@@ -22,7 +22,7 @@ actor HLSService {
 	private let pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor?
 	private let captureSession = AVCaptureSession()
 	private let audioInput: AVAssetWriterInput?
-	
+
 	private let start: Date
 
 	let writers: [HLSWriter]
@@ -38,7 +38,7 @@ actor HLSService {
 
 	init(url: URL, syphonClient: SyphonCoreImageClient?, audioDevice: AVCaptureDevice?) {
 		self.start = .now
-		
+
 		self.writers = [
 			HLSFileWriter(baseURL: url),
 			HLSS3Writer(),
@@ -232,7 +232,14 @@ actor HLSService {
 					switch segment.type {
 					case .initialization:
 						for output in writerOutputs {
-							output.chunks.continuation.yield(.init(data: segment.data, key: "\(prefix)/0.mp4", type: .mpeg4Movie))
+							output.chunks.continuation.yield(
+								.init(
+									data: segment.data,
+									key: "\(prefix)/0.mp4",
+									type: .mpeg4Movie,
+									shouldEnableCaching: true
+								)
+							)
 						}
 					case .separable:
 						guard let trackReport = segment.report?.trackReports.first else { continue }
@@ -250,21 +257,24 @@ actor HLSService {
 								.init(
 									data: segment.data,
 									key: prefix + "/" + record.name,
-									type: .segmentedVideo
+									type: .segmentedVideo,
+									shouldEnableCaching: true
 								)
 							)
 							output.chunks.continuation.yield(
 								.init(
-									data: Data(records.hlsPlaylist(prefix: prefix).utf8),
+									data: Data(records.suffix(60 * 5).hlsPlaylist(prefix: prefix).utf8),
 									key: "live.m3u8",
-									type: .m3uPlaylist
+									type: .m3uPlaylist,
+									shouldEnableCaching: false
 								)
 							)
 							output.chunks.continuation.yield(
 								.init(
 									data: Data(records.hlsPlaylist(prefix: nil).utf8),
 									key: prefix + "/play.m3u8",
-									type: .m3uPlaylist
+									type: .m3uPlaylist,
+									shouldEnableCaching: false
 								)
 							)
 						}

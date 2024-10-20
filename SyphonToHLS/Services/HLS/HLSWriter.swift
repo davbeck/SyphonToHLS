@@ -7,6 +7,7 @@ struct HLSWriterChunk: Sendable {
 	var data: Data
 	var key: String
 	var type: UTType
+	var shouldEnableCaching: Bool
 }
 
 protocol HLSWriter {
@@ -75,7 +76,7 @@ struct HLSS3Writer: HLSWriter {
 		let putObjectRequest = S3.PutObjectRequest(
 			body: .init(bytes: chunk.data),
 			bucket: bucket,
-//			cacheControl: "",
+			cacheControl: chunk.shouldEnableCaching ? "max-age=31536000, immutable" : "max-age=0, no-cache",
 			contentType: chunk.type.preferredMIMEType ?? "",
 			key: chunk.key
 		)
