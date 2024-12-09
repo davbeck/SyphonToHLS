@@ -54,7 +54,7 @@ actor HLSService {
 
 		assetWriter.shouldOptimizeForNetworkUse = true
 		assetWriter.outputFileTypeProfile = .mpeg4AppleHLS
-		assetWriter.preferredOutputSegmentInterval = CMTime(seconds: 1, preferredTimescale: 1)
+		assetWriter.preferredOutputSegmentInterval = CMTime(seconds: 6, preferredTimescale: 1)
 		assetWriter.delegate = writerDelegate
 
 		// Video
@@ -67,7 +67,7 @@ actor HLSService {
 					AVVideoHeightKey: 1080,
 
 					AVVideoCompressionPropertiesKey: [
-						kVTCompressionPropertyKey_AverageBitRate: 1_000_000,
+						kVTCompressionPropertyKey_AverageBitRate: 6 * 1024 * 1024,
 						kVTCompressionPropertyKey_ProfileLevel: kVTProfileLevel_H264_High_4_1,
 					],
 				]
@@ -96,9 +96,9 @@ actor HLSService {
 			let audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: [
 				AVFormatIDKey: kAudioFormatMPEG4AAC,
 
-				AVSampleRateKey: 48000,
+				AVSampleRateKey: 48_000,
 				AVNumberOfChannelsKey: 1,
-				AVEncoderBitRateKey: 160_000,
+				AVEncoderBitRateKey: 80 * 1024,
 			])
 			audioInput.expectsMediaDataInRealTime = true
 
