@@ -96,7 +96,7 @@ actor HLSService {
 			let audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: [
 				AVFormatIDKey: kAudioFormatMPEG4AAC,
 
-				AVSampleRateKey: 48_000,
+				AVSampleRateKey: 48000,
 				AVNumberOfChannelsKey: 1,
 				AVEncoderBitRateKey: 80 * 1024,
 			])
@@ -123,12 +123,21 @@ actor HLSService {
 		}
 	}
 
-	func start() async {
+	func start() async throws {
 		captureSession.startRunning()
 
 		assetWriter.initialSegmentStartTime = clock.time
 		assetWriter.startWriting()
 		assetWriter.startSession(atSourceTime: clock.time)
+		
+		defer {
+			captureSession.stopRunning()
+
+			audioInput?.markAsFinished()
+			videoInput?.markAsFinished()
+			assetWriter.endSession(atSourceTime: clock.time)
+			assetWriter.cancelWriting()
+		}
 
 		let writerOutputs = writers.map { writer in
 			(
@@ -137,12 +146,22 @@ actor HLSService {
 			)
 		}
 
-		await withTaskGroup(of: Void.self) { [assetWriter, audioInput, logger, writerDelegate, captureAudioDataOutputSampleBufferDelegate] group in
+		try await withThrowingTaskGroup(of: Void.self) { [assetWriter, audioInput, logger, writerDelegate, captureAudioDataOutputSampleBufferDelegate] group in
 			if let audioInput {
 				group.addTask {
 					for await sampleBuffer in captureAudioDataOutputSampleBufferDelegate.stream {
-						guard assetWriter.status == .writing else {
-							logger.warning("AVAssetWriter is not writing")
+						switch assetWriter.status {
+						case .unknown:
+							continue
+						case .cancelled:
+							throw CancellationError()
+						case .failed:
+							throw assetWriter.error ?? Error.invalidWriterStatus(assetWriter.status)
+						case .completed:
+							return
+						case .writing:
+							break
+						@unknown default:
 							continue
 						}
 
@@ -161,52 +180,63 @@ actor HLSService {
 					var lastPresentationTime: CMTime?
 
 					for await frame in syphonClient.frames {
-						do {
-							let presentationTime = CMTimeConvertScale(frame.time, timescale: 30, method: .default)
-							guard presentationTime != lastPresentationTime else {
+						let presentationTime = CMTimeConvertScale(frame.time, timescale: 30, method: .default)
+						guard presentationTime != lastPresentationTime else {
 //								logger.warning("next frame too soon, skipping")
-								continue
-							}
-							lastPresentationTime = presentationTime
+							continue
+						}
+						lastPresentationTime = presentationTime
 
-							guard assetWriter.status == .writing else {
-								if let error = assetWriter.error {
-									throw error
-								} else {
-									throw Error.invalidWriterStatus(assetWriter.status)
-								}
-							}
+						switch assetWriter.status {
+						case .unknown:
+							continue
+						case .cancelled:
+							throw CancellationError()
+						case .failed:
+							throw assetWriter.error ?? Error.invalidWriterStatus(assetWriter.status)
+						case .completed:
+							return
+						case .writing:
+							break
+						@unknown default:
+							continue
+						}
 
-							guard videoInput.isReadyForMoreMediaData else {
-								logger.warning("video input not ready")
-								continue
-							}
+						guard videoInput.isReadyForMoreMediaData else {
+							logger.warning("video input not ready")
+							continue
+						}
 
-							let image = frame.image
+						let size = AVMakeRect(
+							aspectRatio: frame.image.extent.size,
+							insideRect: CGRect(origin: .zero, size: CGSize(width: 1920, height: 1080))
+						)
+						let image = frame.image
+							.transformed(by: CGAffineTransform(
+								scaleX: size.size.width / frame.image.extent.size.width,
+								y: size.size.height / frame.image.extent.size.height
+							))
 
-							guard let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool else {
-								logger.error("Pixel buffer asset writer input did not have a pixel buffer pool available; cannot retrieve frame")
-								continue
-							}
+						guard let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool else {
+							logger.error("Pixel buffer asset writer input did not have a pixel buffer pool available; cannot retrieve frame")
+							continue
+						}
 
-							var maybePixelBuffer: CVPixelBuffer?
-							let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &maybePixelBuffer)
-							guard let pixelBuffer = maybePixelBuffer, status == kCVReturnSuccess else {
-								logger.error("Could not get pixel buffer from asset writer input; dropping frame (status \(status))")
-								continue
-							}
+						var maybePixelBuffer: CVPixelBuffer?
+						let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &maybePixelBuffer)
+						guard let pixelBuffer = maybePixelBuffer, status == kCVReturnSuccess else {
+							logger.error("Could not get pixel buffer from asset writer input; dropping frame (status \(status))")
+							continue
+						}
 
-							context.render(image, to: pixelBuffer)
+						context.render(image, to: pixelBuffer)
 
-							let result = pixelBufferAdaptor.append(
-								pixelBuffer,
-								withPresentationTime: presentationTime
-							)
-							if !result {
-								logger.error("could not append pixel buffer at \(String(describing: presentationTime))")
-							}
-						} catch {
-							logger.error("failed to write frame \(error)")
+						let result = pixelBufferAdaptor.append(
+							pixelBuffer,
+							withPresentationTime: presentationTime
+						)
+						if !result {
+							logger.error("could not append pixel buffer at \(String(describing: presentationTime))")
 						}
 					}
 				}
@@ -284,16 +314,8 @@ actor HLSService {
 				}
 			}
 
-			await group.waitForAll()
+			try await group.waitForAll()
 		}
-
-		// cleanup
-		captureSession.stopRunning()
-
-		audioInput?.markAsFinished()
-		videoInput?.markAsFinished()
-		assetWriter.endSession(atSourceTime: clock.time)
-		assetWriter.cancelWriting()
 	}
 
 	struct Segment {

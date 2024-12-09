@@ -1,4 +1,5 @@
 import AVFoundation
+import OSLog
 import CoreImage
 import Metal
 import Observation
@@ -31,6 +32,11 @@ final class ProfileSession {
 	var url = URL.temporaryDirectory
 		.appendingPathComponent(Bundle.main.bundleIdentifier!)
 		.appendingPathComponent("Livestream")
+	
+	private let logger = Logger(
+		subsystem: Bundle(for: ProfileSession.self).bundleIdentifier ?? "",
+		category: "ProfileSession"
+	)
 	
 	static let shared = ProfileSession()
 
@@ -99,9 +105,15 @@ final class ProfileSession {
 
 		let hlsService = HLSService(url: url, syphonClient: client, audioDevice: audioDevice)
 
-		await withTaskGroup(of: Void.self) { group in
+		await withTaskGroup(of: Void.self) { [logger] group in
 			group.addTask {
-				await hlsService.start()
+				while !Task.isCancelled {
+					do {
+						try await hlsService.start()
+					} catch {
+						logger.error("hls session failed: \(error)")
+					}
+				}
 			}
 
 			if let client {
