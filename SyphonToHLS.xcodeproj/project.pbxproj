@@ -12,6 +12,7 @@
 		1127AC512C76375D004C5D8C /* Syphon.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		11A3E9962C7E17B400FA30D6 /* SotoS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 11A3E9952C7E17B400FA30D6 /* SotoS3 */; };
 		11D52B882CA0EBAF00EBFB73 /* NWHTTPServer in Frameworks */ = {isa = PBXBuildFile; productRef = 11D52B872CA0EBAF00EBFB73 /* NWHTTPServer */; };
+		11D6F8D82D06B08A00D3A159 /* Queue in Frameworks */ = {isa = PBXBuildFile; productRef = 11D6F8D72D06B08A00D3A159 /* Queue */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,6 +77,7 @@
 				11D52B882CA0EBAF00EBFB73 /* NWHTTPServer in Frameworks */,
 				111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */,
 				1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */,
+				11D6F8D82D06B08A00D3A159 /* Queue in Frameworks */,
 				11A3E9962C7E17B400FA30D6 /* SotoS3 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -150,6 +152,7 @@
 				11A3E9952C7E17B400FA30D6 /* SotoS3 */,
 				111477002C7E90C600C4E395 /* KeychainSwift */,
 				11D52B872CA0EBAF00EBFB73 /* NWHTTPServer */,
+				11D6F8D72D06B08A00D3A159 /* Queue */,
 			);
 			productName = SyphonToHLS;
 			productReference = 1127AC1B2C7636F8004C5D8C /* SyphonToHLS.app */;
@@ -239,6 +242,7 @@
 				111476FF2C7E81B900C4E395 /* XCRemoteSwiftPackageReference "keychain-swift" */,
 				111478352C81278100C4E395 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				11D52B4C2CA0EB7300EBFB73 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */,
+				1151D20E2D06AEA9003BB250 /* XCRemoteSwiftPackageReference "Queue" */,
 			);
 			productRefGroup = 1127AC1C2C7636F8004C5D8C /* Products */;
 			projectDirPath = "";
@@ -632,6 +636,14 @@
 				minimumVersion = 5.3.0;
 			};
 		};
+		1151D20E2D06AEA9003BB250 /* XCRemoteSwiftPackageReference "Queue" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mattmassicotte/Queue.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.2.0;
+			};
+		};
 		11A3E9942C7E17B400FA30D6 /* XCRemoteSwiftPackageReference "soto" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/soto-project/soto.git";
@@ -665,6 +677,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 11D52B4C2CA0EB7300EBFB73 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */;
 			productName = NWHTTPServer;
+		};
+		11D6F8D72D06B08A00D3A159 /* Queue */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1151D20E2D06AEA9003BB250 /* XCRemoteSwiftPackageReference "Queue" */;
+			productName = Queue;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

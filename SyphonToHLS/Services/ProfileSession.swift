@@ -33,10 +33,7 @@ final class ProfileSession {
 		.appendingPathComponent(Bundle.main.bundleIdentifier!)
 		.appendingPathComponent("Livestream")
 	
-	private let logger = Logger(
-		subsystem: Bundle(for: ProfileSession.self).bundleIdentifier ?? "",
-		category: "ProfileSession"
-	)
+	private let logger = Logger(category: "ProfileSession")
 	
 	static let shared = ProfileSession()
 

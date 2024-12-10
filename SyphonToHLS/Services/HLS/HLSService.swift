@@ -1,6 +1,7 @@
 import AVFoundation
 import CoreImage
 import OSLog
+import Queue
 import VideoToolbox
 
 private let queue = DispatchQueue(label: "hls")
@@ -13,7 +14,7 @@ actor HLSService {
 
 	let syphonClient: SyphonCoreImageClient?
 
-	let writerDelegate = WriterDelegate()
+	let writerDelegate: WriterDelegate
 	let captureAudioDataOutputSampleBufferDelegate = CaptureAudioDataOutputSampleBufferDelegate()
 
 	private let clock = CMClock.hostTimeClock
@@ -25,30 +26,25 @@ actor HLSService {
 
 	private let start: Date
 
-	let writers: [HLSWriter]
-
 	private let context = CIContext()
 
-	private let logger = Logger(
-		subsystem: Bundle(for: HLSService.self).bundleIdentifier ?? "",
-		category: "HLSService"
-	)
+	private let logger = Logger(category: "HLSService")
 
 	private let prefix: String
 
 	init(url: URL, syphonClient: SyphonCoreImageClient?, audioDevice: AVCaptureDevice?) {
 		self.start = .now
 
-		self.writers = [
-			HLSFileWriter(baseURL: url),
-			HLSS3Writer(),
-		]
-
-		self.syphonClient = syphonClient
-
 		let dateFormatter = DateFormatter()
 		dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm"
 		prefix = dateFormatter.string(from: start)
+
+		self.writerDelegate = WriterDelegate(writers: [
+			HLSFileWriter(baseURL: url, prefix: prefix),
+			HLSS3Writer(prefix: prefix),
+		])
+
+		self.syphonClient = syphonClient
 
 		self.assetWriter = AVAssetWriter(contentType: .mpeg4Movie)
 
@@ -129,7 +125,7 @@ actor HLSService {
 		assetWriter.initialSegmentStartTime = clock.time
 		assetWriter.startWriting()
 		assetWriter.startSession(atSourceTime: clock.time)
-		
+
 		defer {
 			captureSession.stopRunning()
 
@@ -137,13 +133,6 @@ actor HLSService {
 			videoInput?.markAsFinished()
 			assetWriter.endSession(atSourceTime: clock.time)
 			assetWriter.cancelWriting()
-		}
-
-		let writerOutputs = writers.map { writer in
-			(
-				writer: writer,
-				chunks: AsyncStream.makeStream(of: HLSWriterChunk.self, bufferingPolicy: .unbounded)
-			)
 		}
 
 		try await withThrowingTaskGroup(of: Void.self) { [assetWriter, audioInput, logger, writerDelegate, captureAudioDataOutputSampleBufferDelegate] group in
@@ -242,94 +231,15 @@ actor HLSService {
 				}
 			}
 
-			for output in writerOutputs {
-				group.addTask {
-					for await chunk in output.chunks.stream {
-						do {
-							try await output.writer.write(chunk)
-						} catch {
-							logger.error("failed to write chunk \(chunk.key) to \(String(describing: output.writer)): \(error)")
-						}
-					}
-				}
-			}
-
-			group.addTask { [prefix] in
-				var lastIndex = Int(self.start.timeIntervalSince1970)
-				var records: [HLSRecord] = []
-
-				for await segment in writerDelegate.stream {
-					switch segment.type {
-					case .initialization:
-						for output in writerOutputs {
-							output.chunks.continuation.yield(
-								.init(
-									data: segment.data,
-									key: "\(prefix)/0.mp4",
-									type: .mpeg4Movie,
-									shouldEnableCaching: true
-								)
-							)
-						}
-					case .separable:
-						guard let trackReport = segment.report?.trackReports.first else { continue }
-
-						lastIndex += 1
-
-						let record = HLSRecord(
-							index: lastIndex,
-							duration: trackReport.duration
-						)
-						records.append(record)
-
-						for output in writerOutputs {
-							output.chunks.continuation.yield(
-								.init(
-									data: segment.data,
-									key: prefix + "/" + record.name,
-									type: .segmentedVideo,
-									shouldEnableCaching: true
-								)
-							)
-							output.chunks.continuation.yield(
-								.init(
-									data: Data(records.suffix(60 * 5).hlsPlaylist(prefix: prefix).utf8),
-									key: "live.m3u8",
-									type: .m3uPlaylist,
-									shouldEnableCaching: false
-								)
-							)
-							output.chunks.continuation.yield(
-								.init(
-									data: Data(records.hlsPlaylist(prefix: nil).utf8),
-									key: prefix + "/play.m3u8",
-									type: .m3uPlaylist,
-									shouldEnableCaching: false
-								)
-							)
-						}
-					@unknown default:
-						logger.error("@unknown segment type \(segment.type.rawValue)")
-					}
-				}
-			}
-
 			try await group.waitForAll()
 		}
 	}
 
-	struct Segment {
-		var data: Data
-		var type: AVAssetSegmentType
-		var report: AVAssetSegmentReport?
-	}
-
 	final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
-		private let continuation: AsyncStream<Segment>.Continuation
-		let stream: AsyncStream<Segment>
+		let outputs: [(writer: HLSWriter, queue: AsyncQueue)]
 
-		override init() {
-			(stream, continuation) = AsyncStream.makeStream()
+		init(writers: [HLSWriter]) {
+			self.outputs = writers.map { ($0, .init()) }
 
 			super.init()
 		}
@@ -340,13 +250,15 @@ actor HLSService {
 			segmentType: AVAssetSegmentType,
 			segmentReport: AVAssetSegmentReport?
 		) {
-			continuation.yield(
-				.init(
-					data: segmentData,
-					type: segmentType,
-					report: segmentReport
-				)
-			)
+			for (writer, queue) in self.outputs {
+				queue.addOperation {
+					try await writer.write(.init(
+						data: segmentData,
+						type: segmentType,
+						report: segmentReport
+					))
+				}
+			}
 		}
 	}
 
