@@ -5,6 +5,38 @@ import Queue
 import VideoToolbox
 
 actor HLSVideoService {
+	enum QualityLevel: CaseIterable {
+		case high // 1080 7.5mbps
+		case medium // 720 3.8mbps
+		case low // 360 350kbps
+
+		var resolutions: CGSize {
+			switch self {
+			case .high:
+				CGSize(width: 1920, height: 1080)
+			case .medium:
+				CGSize(width: 1280, height: 720)
+			case .low:
+				CGSize(width: 640, height: 360)
+			}
+		}
+
+		var prefix: String {
+			String(Int(resolutions.height))
+		}
+
+		var bitrate: Int {
+			switch self {
+			case .high:
+				Int(7.5 * 1024 * 1024)
+			case .medium:
+				Int(3.8 * 1024 * 1024)
+			case .low:
+				Int(350 * 1024)
+			}
+		}
+	}
+
 	let syphonClient: SyphonCoreImageClient
 
 	var writerDelegate: WriterDelegate?
@@ -19,10 +51,14 @@ actor HLSVideoService {
 
 	private let logger = Logger(category: "HLSService")
 
-	init(url: URL, syphonClient: SyphonCoreImageClient, uploader: S3Uploader) {
+	let quality: QualityLevel
+
+	init(url: URL, syphonClient: SyphonCoreImageClient, uploader: S3Uploader, quality: QualityLevel) {
+		self.quality = quality
+
 		self.writers = [
-			HLSFileWriter(baseURL: url.appending(component: "1080")),
-			HLSS3Writer(uploader: uploader, prefix: "1080"),
+			HLSFileWriter(baseURL: url.appending(component: quality.prefix)),
+			HLSS3Writer(uploader: uploader, prefix: quality.prefix),
 		]
 
 		self.syphonClient = syphonClient
@@ -33,11 +69,11 @@ actor HLSVideoService {
 			mediaType: .video,
 			outputSettings: [
 				AVVideoCodecKey: AVVideoCodecType.h264,
-				AVVideoWidthKey: 1920,
-				AVVideoHeightKey: 1080,
+				AVVideoWidthKey: quality.resolutions.width,
+				AVVideoHeightKey: quality.resolutions.height,
 
 				AVVideoCompressionPropertiesKey: [
-					kVTCompressionPropertyKey_AverageBitRate: 6 * 1024 * 1024,
+					kVTCompressionPropertyKey_AverageBitRate: quality.bitrate,
 					kVTCompressionPropertyKey_ProfileLevel: kVTProfileLevel_H264_High_4_1,
 				],
 			]
@@ -49,8 +85,8 @@ actor HLSVideoService {
 			assetWriterInput: videoInput,
 			sourcePixelBufferAttributes: [
 				kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA, // bgra8Unorm
-				kCVPixelBufferWidthKey as String: 1920,
-				kCVPixelBufferHeightKey as String: 1080,
+				kCVPixelBufferWidthKey as String: quality.resolutions.width,
+				kCVPixelBufferHeightKey as String: quality.resolutions.height,
 				kCVPixelBufferMetalCompatibilityKey as String: true,
 			]
 		)
@@ -114,7 +150,13 @@ actor HLSVideoService {
 
 			let size = AVMakeRect(
 				aspectRatio: frame.image.extent.size,
-				insideRect: CGRect(origin: .zero, size: CGSize(width: 1920, height: 1080))
+				insideRect: CGRect(
+					origin: .zero,
+					size: CGSize(
+						width: quality.resolutions.width,
+						height: quality.resolutions.height
+					)
+				)
 			)
 			let image = frame.image
 				.transformed(by: CGAffineTransform(

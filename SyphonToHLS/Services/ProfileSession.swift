@@ -102,13 +102,23 @@ final class ProfileSession {
 			SyphonCoreImageClient($0, device: device)
 		}
 
-		let variantPlaylist = """
-		#EXTM3U
-		#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",LANGUAGE="en",NAME="English",AUTOSELECT=YES, DEFAULT=YES,URI="audio/live.m3u8"
+		let qualityLevels = HLSVideoService.QualityLevel.allCases //.prefix(1)
 
-		#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=6291456,RESOLUTION=1920x1080,CODECS="avc1.4d401e",AUDIO="audio"
-		1080/live.m3u8
-		"""
+		let variantPlaylist =
+			"""
+			#EXTM3U
+			#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",LANGUAGE="en",NAME="English",AUTOSELECT=YES, DEFAULT=YES,URI="audio/live.m3u8"
+			
+			
+			""" +
+			qualityLevels.map {
+				"""
+				#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=\($0.bitrate),RESOLUTION=\(Int($0.resolutions.width))x\(Int($0.resolutions.height)),CODECS="avc1.4d401e",AUDIO="audio"
+				\($0.prefix)/live.m3u8
+				"""
+			}.joined(separator: "\n")
+		
+		print(variantPlaylist)
 
 		await withTaskGroup(of: Void.self) { [logger, url] group in
 			group.addTask {
@@ -119,7 +129,7 @@ final class ProfileSession {
 						encoding: .utf8
 					)
 				} catch {
-					logger.error("failed to write variant playlist \(error)")
+					logger.error("failed to write variant playlist to file \(error)")
 				}
 			}
 
@@ -132,22 +142,24 @@ final class ProfileSession {
 						shouldEnableCaching: false
 					)
 				} catch {
-					logger.error("failed to write variant playlist \(error)")
+					logger.error("failed to write variant playlist to s3 \(error)")
 				}
 			}
 
 			// audioDevice: audioDevice
 			if let client {
-				group.addTask {
-					while !Task.isCancelled {
-						let videoService = HLSVideoService(url: url, syphonClient: client, uploader: uploader)
-						do {
-							try await videoService.start()
-						} catch {
-							logger.error("hls session failed: \(error)")
-						}
+				for quality in qualityLevels {
+					group.addTask {
+						while !Task.isCancelled {
+							let videoService = HLSVideoService(url: url, syphonClient: client, uploader: uploader, quality: quality)
+							do {
+								try await videoService.start()
+							} catch {
+								logger.error("hls session failed: \(error)")
+							}
 
-						try? await Task.sleep(for: .seconds(1))
+							try? await Task.sleep(for: .seconds(1))
+						}
 					}
 				}
 			}
