@@ -33,6 +33,7 @@ extension Collection where Element == HLSRecord {
 		#EXT-X-TARGETDURATION:6
 		#EXT-X-VERSION:9
 		#EXT-X-MEDIA-SEQUENCE:\(startSequence)
+		#EXT-X-DISCONTINUITY-SEQUENCE:\(startSequence)
 		#EXT-X-MAP:URI="\(prefix)0.mp4"
 		\(segmentTemplate)
 		"""

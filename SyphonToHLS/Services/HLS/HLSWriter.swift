@@ -5,17 +5,6 @@ import SotoCore
 import SotoS3
 import UniformTypeIdentifiers
 
-// struct HLSWriterChunk: Sendable {
-//	var data: Data
-//	var key: String
-//	var type: UTType
-//	var shouldEnableCaching: Bool
-// }
-
-protocol HLSWriter: Sendable {
-	func write(_ segment: HLSSegment) async throws
-}
-
 actor HLSFileWriter: HLSWriter {
 	private let queue = DispatchQueue(label: "HLSFileWriter")
 	private let logger = os.Logger(category: "HLSFileWriter")
@@ -23,15 +12,13 @@ actor HLSFileWriter: HLSWriter {
 	var records: [HLSRecord] = []
 
 	let baseURL: URL
-	let prefix: String
 
-	init(baseURL: URL, prefix: String) {
+	init(baseURL: URL) {
 		self.baseURL = baseURL
-		self.prefix = prefix
 
 		queue.async {
 			try? FileManager.default.createDirectory(
-				at: baseURL.appending(component: prefix),
+				at: baseURL,
 				withIntermediateDirectories: true
 			)
 		}
@@ -39,37 +26,29 @@ actor HLSFileWriter: HLSWriter {
 
 	func write(_ segment: HLSSegment) async throws {
 		let record = HLSRecord(
-			index: (records.map(\.index).max() ?? 0) + 1,
+			index: segment.index,
 			duration: segment.duration
 		)
 		records.append(record)
 
-		queue.async { [baseURL, prefix, logger, records] in
+		queue.async { [baseURL, logger, records] in
 			do {
 				switch segment.type {
 				case .initialization:
 					try segment.data.write(
 						to: baseURL
-							.appending(component: prefix)
 							.appending(component: "0.mp4"),
 						options: .atomic
 					)
 				case .separable:
 					try segment.data.write(
 						to: baseURL
-							.appending(component: prefix)
 							.appending(component: record.name),
 						options: .atomic
 					)
-					try Data(records.suffix(60 * 5).hlsPlaylist(prefix: prefix).utf8).write(
+					try Data(records.suffix(60 * 5).hlsPlaylist(prefix: nil).utf8).write(
 						to: baseURL
 							.appending(component: "live.m3u8"),
-						options: .atomic
-					)
-					try Data(records.hlsPlaylist(prefix: nil).utf8).write(
-						to: baseURL
-							.appending(component: prefix)
-							.appending(component: "play.m3u8"),
 						options: .atomic
 					)
 				@unknown default:
@@ -106,18 +85,18 @@ extension AWSClient {
 }
 
 actor HLSS3Writer: HLSWriter {
-	let client = AWSClient.app
+	let uploader: S3Uploader
 	private let logger = os.Logger(category: "HLSS3Writer")
 
 	private let liveQueue = AsyncQueue()
-	private let playQueue = AsyncQueue()
-
-	let prefix: String
 
 	var records: [HLSRecord] = []
 	var writeTask: Task<Void, Never> = Task {}
 
-	init(prefix: String) {
+	let prefix: String
+
+	init(uploader: S3Uploader, prefix: String) {
+		self.uploader = uploader
 		self.prefix = prefix
 	}
 
@@ -126,7 +105,7 @@ actor HLSS3Writer: HLSWriter {
 		case .initialization:
 			while !Task.isCancelled {
 				do {
-					try await self.write(
+					try await uploader.write(
 						data: segment.data,
 						key: "\(prefix)/0.mp4",
 						type: .mpeg4Movie,
@@ -139,18 +118,22 @@ actor HLSS3Writer: HLSWriter {
 			}
 		case .separable:
 			let record = HLSRecord(
-				index: Int(round(segment.start.seconds / segment.duration.seconds)),
+				index: segment.index,
 				duration: segment.duration
 			)
+			if let lastRecord = records.last, record.index != lastRecord.index + 1 {
+				logger.warning("segment index \(record.index) is not immediately after \(lastRecord.index), resetting records")
+				records.removeAll()
+			}
 			records.append(record)
 
 			let segment = Task {
 				func upload() async throws {
-					try await self.write(
+					try await uploader.write(
 						data: segment.data,
-						key: prefix + "/" + record.name,
+						key: "\(prefix)/\(record.name)",
 						type: .segmentedVideo,
-						shouldEnableCaching: true
+						shouldEnableCaching: false
 					)
 				}
 
@@ -170,20 +153,11 @@ actor HLSS3Writer: HLSWriter {
 					}
 				}
 			}
-			liveQueue.addOperation { [weak self, records, prefix] in
+			liveQueue.addOperation { [uploader, records, prefix] in
 				try await segment.value
-				try await self?.write(
-					data: Data(records.suffix(10).hlsPlaylist(prefix: prefix).utf8),
-					key: "live.m3u8",
-					type: .m3uPlaylist,
-					shouldEnableCaching: false
-				)
-			}
-			playQueue.addOperation { [weak self, records, prefix] in
-				try await segment.value
-				try await self?.write(
-					data: Data(records.hlsPlaylist(prefix: nil).utf8),
-					key: prefix + "/play.m3u8",
+				try await uploader.write(
+					data: Data(records.suffix(10).hlsPlaylist(prefix: nil).utf8),
+					key: "\(prefix)/live.m3u8",
 					type: .m3uPlaylist,
 					shouldEnableCaching: false
 				)
@@ -192,15 +166,31 @@ actor HLSS3Writer: HLSWriter {
 			logger.error("@unknown segment type \(segment.type.rawValue)")
 		}
 	}
+}
 
-	private func write(
+struct S3Uploader {
+	let client = AWSClient.app
+	let s3: S3
+	let bucket: String
+
+	@MainActor
+	init(appStorage: AppStorage) {
+		s3 = S3(
+			client: client,
+			region: .init(
+				awsRegionName: appStorage[.awsRegion]
+			),
+			timeout: .seconds(10)
+		)
+		bucket = appStorage[.awsS3Bucket]
+	}
+
+	func write(
 		data: Data,
 		key: String,
 		type: UTType,
 		shouldEnableCaching: Bool
 	) async throws {
-		let (s3, bucket) = await s3()
-
 		let putObjectRequest = S3.PutObjectRequest(
 			body: .init(bytes: data),
 			bucket: bucket,
@@ -209,15 +199,5 @@ actor HLSS3Writer: HLSWriter {
 			key: key
 		)
 		_ = try await s3.putObject(putObjectRequest)
-	}
-
-	@MainActor
-	private func s3() -> (S3, bucket: String) {
-		let appStorage = AppStorage.shared
-
-		let bucket: String = appStorage[.awsS3Bucket]
-		let s3 = S3(client: client, region: .init(awsRegionName: appStorage[.awsRegion]), timeout: .seconds(5))
-
-		return (s3, bucket)
 	}
 }
