@@ -6,7 +6,7 @@ extension AVAssetWriter {
 
 		assetWriter.shouldOptimizeForNetworkUse = true
 		assetWriter.outputFileTypeProfile = .mpeg4AppleHLS
-		assetWriter.preferredOutputSegmentInterval = CMTime(seconds: 6, preferredTimescale: 1)
+		assetWriter.preferredOutputSegmentInterval = CMTime(seconds: 1, preferredTimescale: 1)
 
 		return assetWriter
 	}

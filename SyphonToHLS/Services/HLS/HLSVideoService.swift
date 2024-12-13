@@ -71,7 +71,7 @@ actor HLSVideoService {
 
 		self.writerDelegate = WriterDelegate(
 			start: start,
-			segmentInterval: .init(seconds: 6, preferredTimescale: 1),
+			segmentInterval: assetWriter.preferredOutputSegmentInterval,
 			writers: writers,
 			stream: .video(quality)
 		)
