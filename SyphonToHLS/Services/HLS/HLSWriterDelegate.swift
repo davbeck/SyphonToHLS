@@ -1,4 +1,5 @@
 import AVFoundation
+import Dependencies
 import OSLog
 import Queue
 
@@ -7,16 +8,22 @@ protocol HLSWriter: Sendable {
 }
 
 final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
+	@Dependency(\.performanceTracker) private var performanceTracker
+
 	private let logger = Logger(category: "HLSWriterDelegate")
 
 	let outputs: [(writer: HLSWriter, queue: AsyncQueue)]
 	let start: CMTime
 	let segmentInterval: CMTime
 
-	init(start: CMTime, segmentInterval: CMTime, writers: [HLSWriter]) {
+	let stream: Stream
+
+	init(start: CMTime, segmentInterval: CMTime, writers: [HLSWriter], stream: Stream) {
 		self.start = start
 		self.segmentInterval = segmentInterval
 		self.outputs = writers.map { ($0, .init()) }
+
+		self.stream = stream
 
 		super.init()
 	}
@@ -40,6 +47,16 @@ final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
 		@unknown default:
 			logger.warning("unknown segment type: \(segmentType.rawValue, privacy: .public)")
 			return
+		}
+
+		// compare end of segment to current time
+		if let end = segmentReport?.end, let duration = segmentReport?.duration {
+			Task {
+				let encodingTime = (CMClock.hostTimeClock.time - end).seconds
+				let performance = encodingTime / duration.seconds
+
+				await self.performanceTracker.record(performance, stream: stream, operation: .encode)
+			}
 		}
 
 		for (writer, queue) in self.outputs {

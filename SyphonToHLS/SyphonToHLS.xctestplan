@@ -1,0 +1,38 @@
+{
+  "configurations" : [
+    {
+      "id" : "E868E7DD-86F1-4829-A040-3EA164809107",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:SyphonToHLS.xcodeproj",
+      "identifier" : "1127AC1A2C7636F8004C5D8C",
+      "name" : "SyphonToHLS"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:SyphonToHLS.xcodeproj",
+        "identifier" : "1127AC2B2C7636FA004C5D8C",
+        "name" : "SyphonToHLSTests"
+      }
+    },
+    {
+      "enabled" : false,
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:SyphonToHLS.xcodeproj",
+        "identifier" : "1127AC352C7636FA004C5D8C",
+        "name" : "SyphonToHLSUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

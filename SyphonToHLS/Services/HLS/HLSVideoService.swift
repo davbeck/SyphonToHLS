@@ -5,38 +5,6 @@ import Queue
 import VideoToolbox
 
 actor HLSVideoService {
-	enum QualityLevel: CaseIterable {
-		case high // 1080 7.5mbps
-		case medium // 720 3.8mbps
-		case low // 360 350kbps
-
-		var resolutions: CGSize {
-			switch self {
-			case .high:
-				CGSize(width: 1920, height: 1080)
-			case .medium:
-				CGSize(width: 1280, height: 720)
-			case .low:
-				CGSize(width: 640, height: 360)
-			}
-		}
-
-		var prefix: String {
-			String(Int(resolutions.height))
-		}
-
-		var bitrate: Int {
-			switch self {
-			case .high:
-				Int(7.5 * 1024 * 1024)
-			case .medium:
-				Int(3.8 * 1024 * 1024)
-			case .low:
-				Int(350 * 1024)
-			}
-		}
-	}
-
 	let syphonClient: SyphonCoreImageClient
 
 	var writerDelegate: WriterDelegate?
@@ -51,14 +19,14 @@ actor HLSVideoService {
 
 	private let logger = Logger(category: "HLSService")
 
-	let quality: QualityLevel
+	let quality: VideoQualityLevel
 
-	init(url: URL, syphonClient: SyphonCoreImageClient, uploader: S3Uploader, quality: QualityLevel) {
+	init(url: URL, syphonClient: SyphonCoreImageClient, uploader: S3Uploader, quality: VideoQualityLevel) {
 		self.quality = quality
 
 		self.writers = [
-			HLSFileWriter(baseURL: url.appending(component: quality.prefix)),
-			HLSS3Writer(uploader: uploader, prefix: quality.prefix),
+			HLSFileWriter(baseURL: url.appending(component: quality.name)),
+			HLSS3Writer(uploader: uploader, stream: .video(quality)),
 		]
 
 		self.syphonClient = syphonClient
@@ -104,7 +72,8 @@ actor HLSVideoService {
 		self.writerDelegate = WriterDelegate(
 			start: start,
 			segmentInterval: .init(seconds: 6, preferredTimescale: 1),
-			writers: writers
+			writers: writers,
+			stream: .video(quality)
 		)
 		assetWriter.delegate = writerDelegate
 

@@ -15,7 +15,7 @@ actor HLSAudioService {
 	init(url: URL, audioDevice: AVCaptureDevice, uploader: S3Uploader) {
 		self.writers = [
 			HLSFileWriter(baseURL: url.appending(component: "audio")),
-			HLSS3Writer(uploader: uploader, prefix: "audio"),
+			HLSS3Writer(uploader: uploader, stream: .audio),
 		]
 
 		self.assetWriter = AVAssetWriter.hlsWriter()
@@ -68,7 +68,8 @@ actor HLSAudioService {
 		self.writerDelegate = WriterDelegate(
 			start: start,
 			segmentInterval: .init(seconds: 6, preferredTimescale: 1),
-			writers: writers
+			writers: writers,
+			stream: .audio
 		)
 		assetWriter.delegate = writerDelegate
 

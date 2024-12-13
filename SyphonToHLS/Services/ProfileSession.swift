@@ -102,7 +102,7 @@ final class ProfileSession {
 			SyphonCoreImageClient($0, device: device)
 		}
 
-		let qualityLevels = HLSVideoService.QualityLevel.allCases //.prefix(1)
+		let qualityLevels = VideoQualityLevel.allCases
 
 		let variantPlaylist =
 			"""
@@ -114,11 +114,9 @@ final class ProfileSession {
 			qualityLevels.map {
 				"""
 				#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=\($0.bitrate),RESOLUTION=\(Int($0.resolutions.width))x\(Int($0.resolutions.height)),CODECS="avc1.4d401e",AUDIO="audio"
-				\($0.prefix)/live.m3u8
+				\($0.name)/live.m3u8
 				"""
 			}.joined(separator: "\n")
-		
-		print(variantPlaylist)
 
 		await withTaskGroup(of: Void.self) { [logger, url] group in
 			group.addTask {

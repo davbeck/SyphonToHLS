@@ -6,9 +6,9 @@ struct HLSSegment {
 	var data: Data
 	var type: AVAssetSegmentType
 	var report: AVAssetSegmentReport?
-	
+
 	var start: CMTime {
-		return self.report?.start ?? CMTime.zero
+		self.report?.start ?? CMTime.zero
 	}
 
 	var duration: CMTime {
@@ -20,6 +20,17 @@ struct HLSSegment {
 
 extension AVAssetSegmentReport {
 	var start: CMTime? {
-		return self.trackReports.map(\.earliestPresentationTimeStamp).min()
+		self.trackReports.map(\.earliestPresentationTimeStamp).min()
+	}
+
+	var duration: CMTime? {
+		self.trackReports.map(\.duration).max()
+	}
+
+	var end: CMTime? {
+		self.trackReports.map { report in
+			report.earliestPresentationTimeStamp + report.duration
+		}
+		.max()
 	}
 }

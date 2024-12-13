@@ -39,6 +39,7 @@ struct SyphonToHLSApp: App {
 		} label: {
 			MenuBarLabel()
 		}
+		.menuBarExtraStyle(.window)
 
 		// defaultLaunchBehavior is macOS 15 only
 		// ideally we could provide this as an option in the menu bar

@@ -1,3 +1,4 @@
+import Dependencies
 import Foundation
 import OSLog
 import Queue
@@ -85,6 +86,8 @@ extension AWSClient {
 }
 
 actor HLSS3Writer: HLSWriter {
+	@Dependency(\.performanceTracker) private var performanceTracker
+
 	let uploader: S3Uploader
 	private let logger = os.Logger(category: "HLSS3Writer")
 
@@ -93,11 +96,11 @@ actor HLSS3Writer: HLSWriter {
 	var records: [HLSRecord] = []
 	var writeTask: Task<Void, Never> = Task {}
 
-	let prefix: String
+	let stream: Stream
 
-	init(uploader: S3Uploader, prefix: String) {
+	init(uploader: S3Uploader, stream: Stream) {
 		self.uploader = uploader
-		self.prefix = prefix
+		self.stream = stream
 	}
 
 	func write(_ segment: HLSSegment) async throws {
@@ -107,7 +110,7 @@ actor HLSS3Writer: HLSWriter {
 				do {
 					try await uploader.write(
 						data: segment.data,
-						key: "\(prefix)/0.mp4",
+						key: "\(stream.header)/0.mp4",
 						type: .mpeg4Movie,
 						shouldEnableCaching: true
 					)
@@ -117,6 +120,8 @@ actor HLSS3Writer: HLSWriter {
 				}
 			}
 		case .separable:
+			let start = Date.now
+
 			let record = HLSRecord(
 				index: segment.index,
 				duration: segment.duration
@@ -127,11 +132,11 @@ actor HLSS3Writer: HLSWriter {
 			}
 			records.append(record)
 
-			let segment = Task {
+			let segmentUpload = Task {
 				func upload() async throws {
 					try await uploader.write(
 						data: segment.data,
-						key: "\(prefix)/\(record.name)",
+						key: "\(stream.header)/\(record.name)",
 						type: .segmentedVideo,
 						shouldEnableCaching: false
 					)
@@ -153,14 +158,19 @@ actor HLSS3Writer: HLSWriter {
 					}
 				}
 			}
-			liveQueue.addOperation { [uploader, records, prefix] in
-				try await segment.value
+			liveQueue.addOperation { [uploader, records, stream] in
+				try await segmentUpload.value
 				try await uploader.write(
 					data: Data(records.suffix(10).hlsPlaylist(prefix: nil).utf8),
-					key: "\(prefix)/live.m3u8",
+					key: "\(stream.header)/live.m3u8",
 					type: .m3uPlaylist,
 					shouldEnableCaching: false
 				)
+
+				let end = Date.now
+				let performance = (end.timeIntervalSince(start)) / segment.duration.seconds
+
+				await self.performanceTracker.record(performance, stream: stream, operation: .upload)
 			}
 		@unknown default:
 			logger.error("@unknown segment type \(segment.type.rawValue)")
