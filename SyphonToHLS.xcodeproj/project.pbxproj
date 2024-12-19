@@ -10,6 +10,7 @@
 		111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 111477002C7E90C600C4E395 /* KeychainSwift */; };
 		1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; };
 		1127AC512C76375D004C5D8C /* Syphon.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		113A5FEF2D13BC580029F1ED /* SimplyCoreAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 113A5FEE2D13BC580029F1ED /* SimplyCoreAudio */; };
 		11A3E9962C7E17B400FA30D6 /* SotoS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 11A3E9952C7E17B400FA30D6 /* SotoS3 */; };
 		11C0250A2D0BC4CA007457C8 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 11C025092D0BC4CA007457C8 /* Dependencies */; };
 		11C0250E2D0BE0C6007457C8 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 11C0250D2D0BE0C6007457C8 /* SFSafeSymbols */; };
@@ -76,6 +77,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				113A5FEF2D13BC580029F1ED /* SimplyCoreAudio in Frameworks */,
 				11D52B882CA0EBAF00EBFB73 /* NWHTTPServer in Frameworks */,
 				111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */,
 				1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */,
@@ -159,6 +161,7 @@
 				11D6F8D72D06B08A00D3A159 /* Queue */,
 				11C025092D0BC4CA007457C8 /* Dependencies */,
 				11C0250D2D0BE0C6007457C8 /* SFSafeSymbols */,
+				113A5FEE2D13BC580029F1ED /* SimplyCoreAudio */,
 			);
 			productName = SyphonToHLS;
 			productReference = 1127AC1B2C7636F8004C5D8C /* SyphonToHLS.app */;
@@ -250,6 +253,7 @@
 				11D52B4C2CA0EB7300EBFB73 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */,
 				1151D20E2D06AEA9003BB250 /* XCRemoteSwiftPackageReference "Queue" */,
 				11C120712D0B3278003C05CA /* XCRemoteSwiftPackageReference "swift-dependencies" */,
+				113A5F9A2D139ED20029F1ED /* XCRemoteSwiftPackageReference "SimplyCoreAudio" */,
 			);
 			productRefGroup = 1127AC1C2C7636F8004C5D8C /* Products */;
 			projectDirPath = "";
@@ -643,6 +647,14 @@
 				minimumVersion = 5.3.0;
 			};
 		};
+		113A5F9A2D139ED20029F1ED /* XCRemoteSwiftPackageReference "SimplyCoreAudio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rnine/SimplyCoreAudio.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.1.1;
+			};
+		};
 		1151D20E2D06AEA9003BB250 /* XCRemoteSwiftPackageReference "Queue" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/mattmassicotte/Queue.git";
@@ -682,6 +694,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 111476FF2C7E81B900C4E395 /* XCRemoteSwiftPackageReference "keychain-swift" */;
 			productName = KeychainSwift;
+		};
+		113A5FEE2D13BC580029F1ED /* SimplyCoreAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 113A5F9A2D139ED20029F1ED /* XCRemoteSwiftPackageReference "SimplyCoreAudio" */;
+			productName = SimplyCoreAudio;
 		};
 		11A3E9952C7E17B400FA30D6 /* SotoS3 */ = {
 			isa = XCSwiftPackageProductDependency;

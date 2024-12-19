@@ -1,5 +1,5 @@
 {
-  "originHash" : "779fdb9d5cac2a7ff369a94c44e45a1df9f51a26a8d6a1d1f86b98ef221dfc61",
+  "originHash" : "46e1809449e2643fdae7bd18f26b5ee9af92a0e0a8ec160998948804b6c06db3",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -62,6 +62,15 @@
       "state" : {
         "revision" : "e2e28f4e56e1769c2ec3c61c9355fc64eb7a535a",
         "version" : "5.3.0"
+      }
+    },
+    {
+      "identity" : "simplycoreaudio",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rnine/SimplyCoreAudio.git",
+      "state" : {
+        "revision" : "35cc0e6eac5c2ee5049431f4238b0e333cf79869",
+        "version" : "4.1.1"
       }
     },
     {

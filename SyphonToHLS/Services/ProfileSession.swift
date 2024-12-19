@@ -3,11 +3,13 @@ import CoreImage
 import Metal
 import Observation
 import OSLog
+import SimplyCoreAudio
 
 extension AppStorageKey where Value == String {
 	static let syphonServerName = AppStorageKey(key: "syphonServerName")
 	static let syphonServerApp = AppStorageKey(key: "syphonServerApp")
 	static let audioDeviceID = AppStorageKey(key: "audioDeviceID")
+	static let monitorDeviceID = AppStorageKey(key: "monitorDeviceID")
 }
 
 extension AppStorageKey where Value == Bool {
@@ -25,7 +27,10 @@ final class ProfileSession {
 	let device = MTLCreateSystemDefaultDevice()!
 
 	let syphonService = SyphonService()
-	let audioSourceService = AudioSourceService()
+	let audioSourceService = AudioSourceService.shared
+	let audioOutputService = AudioOutputService.shared
+	let captureSession = AVCaptureSession()
+	let previewOutput = AVCaptureAudioPreviewOutput()
 
 	var image: CIImage?
 
@@ -67,14 +72,29 @@ final class ProfileSession {
 		}
 	}
 
+	var monitorDeviceUID: String {
+		get {
+			appStorage[.monitorDeviceID]
+		}
+		set {
+			appStorage[.monitorDeviceID] = newValue
+		}
+	}
+
 	var isRunning = false
 
 	func start() async {
 		print("url", url.path())
+		guard await AVCaptureDevice.requestAccess(for: .audio) else { return }
+
+		self.updateAudioInput()
+
+		previewOutput.volume = 1
+		self.updatePreview()
+
+		captureSession.startRunning()
 
 		await webServer.start()
-
-		guard await AVCaptureDevice.requestAccess(for: .audio) else { return }
 
 		var currentTask: Task<Void, Never>?
 		let currentServer = AsyncStream.makeObservationStream {
@@ -108,8 +128,8 @@ final class ProfileSession {
 			"""
 			#EXTM3U
 			#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",LANGUAGE="en",NAME="English",AUTOSELECT=YES, DEFAULT=YES,URI="audio/live.m3u8"
-			
-			
+
+
 			""" +
 			qualityLevels.map {
 				"""
@@ -118,7 +138,7 @@ final class ProfileSession {
 				"""
 			}.joined(separator: "\n")
 
-		await withTaskGroup(of: Void.self) { [logger, url] group in
+		await withTaskGroup(of: Void.self) { [logger, url, captureSession] group in
 			group.addTask {
 				do {
 					try variantPlaylist.write(
@@ -165,7 +185,12 @@ final class ProfileSession {
 			if let audioDevice {
 				group.addTask {
 					while !Task.isCancelled {
-						let audioService = HLSAudioService(url: url, audioDevice: audioDevice, uploader: uploader)
+						let audioService = HLSAudioService(
+							url: url,
+							audioDevice: audioDevice,
+							captureSession: captureSession,
+							uploader: uploader
+						)
 						do {
 							try await audioService.start()
 						} catch {
@@ -186,6 +211,63 @@ final class ProfileSession {
 			}
 
 			await group.waitForAll()
+		}
+	}
+
+	func updatePreview() {
+		withObservationTracking {
+			captureSession.beginConfiguration()
+
+			if monitorDeviceUID.isEmpty {
+				captureSession.removeOutput(previewOutput)
+			} else {
+				previewOutput.outputDeviceUniqueID = monitorDeviceUID
+
+				if !captureSession.outputs.contains(previewOutput), captureSession.canAddOutput(previewOutput) {
+					captureSession.addOutput(previewOutput)
+				}
+			}
+
+			captureSession.commitConfiguration()
+		} onChange: { [weak self] in
+			RunLoop.main.perform {
+				MainActor.assumeIsolated {
+					self?.updatePreview()
+				}
+			}
+		}
+	}
+
+	private var captureDeviceInput: AVCaptureDeviceInput?
+	func updateAudioInput() {
+		withObservationTracking {
+			guard captureDeviceInput?.device != self.audioDevice else { return }
+
+			captureSession.beginConfiguration()
+
+			if let captureDeviceInput {
+				captureSession.removeInput(captureDeviceInput)
+			}
+
+			if let audioDevice {
+				do {
+					let captureDeviceInput = try AVCaptureDeviceInput(device: audioDevice)
+					if captureSession.canAddInput(captureDeviceInput) {
+						captureSession.addInput(captureDeviceInput)
+					}
+					self.captureDeviceInput = captureDeviceInput
+				} catch {
+					logger.error("failed to setup audio input: \(error)")
+				}
+			}
+
+			captureSession.commitConfiguration()
+		} onChange: { [weak self] in
+			RunLoop.main.perform {
+				MainActor.assumeIsolated {
+					self?.updatePreview()
+				}
+			}
 		}
 	}
 }

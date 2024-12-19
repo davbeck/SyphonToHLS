@@ -15,6 +15,8 @@ struct ContentMenuView: View {
 				SessionVideoSourcePicker()
 
 				SessionAudioSourcePicker()
+				
+				SessionMonitorSourcePicker()
 
 				stats
 			}

@@ -7,12 +7,11 @@ actor HLSAudioService {
 
 	private let assetWriter: AVAssetWriter
 	private let captureAudioDataOutputSampleBufferDelegate: CaptureAudioDataOutputSampleBufferDelegate
-	private let captureSession = AVCaptureSession()
 	private let audioInput: AVAssetWriterInput
 	private let writers: [HLSWriter]
 	private var writerDelegate: WriterDelegate?
 
-	init(url: URL, audioDevice: AVCaptureDevice, uploader: S3Uploader) {
+	init(url: URL, audioDevice: AVCaptureDevice, captureSession: AVCaptureSession, uploader: S3Uploader) {
 		self.writers = [
 			HLSFileWriter(baseURL: url.appending(component: "audio")),
 			HLSS3Writer(uploader: uploader, stream: .audio),
@@ -35,19 +34,12 @@ actor HLSAudioService {
 		)
 
 		captureSession.beginConfiguration()
-
-		// Wrap the audio device in a capture device input.
-		let audioDeviceInput = try! AVCaptureDeviceInput(device: audioDevice)
-
-		captureSession.addInput(audioDeviceInput)
 		let captureAudioOutput = AVCaptureAudioDataOutput()
 		captureAudioOutput.setSampleBufferDelegate(
 			captureAudioDataOutputSampleBufferDelegate,
 			queue: DispatchQueue(label: "hls_audio")
 		)
-
 		captureSession.addOutput(captureAudioOutput)
-
 		captureSession.commitConfiguration()
 
 		assetWriter.add(audioInput)
@@ -57,9 +49,6 @@ actor HLSAudioService {
 
 	func start() async throws {
 		guard assetWriter.status == .unknown else { throw HLSAssetWriterError.invalidWriterStatus(assetWriter.status) }
-
-		captureSession.startRunning()
-		defer { captureSession.stopRunning() }
 
 		var start = clock.time
 		let roundedSeconds = (start.seconds / 6).rounded(.up) * 6
