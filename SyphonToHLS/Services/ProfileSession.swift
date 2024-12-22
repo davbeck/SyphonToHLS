@@ -34,9 +34,8 @@ final class ProfileSession {
 
 	var image: CIImage?
 
-	var url = URL.temporaryDirectory
-		.appendingPathComponent(Bundle.main.bundleIdentifier!)
-		.appendingPathComponent("Livestream")
+	var url = URL.moviesDirectory
+		.appendingPathComponent("Recordings")
 
 	private let logger = Logger(category: "ProfileSession")
 
@@ -118,6 +117,8 @@ final class ProfileSession {
 
 		guard syphonServer != nil || audioDevice != nil else { return }
 
+		let url = self.url.appending(component: Date.now.formatted(Date.ISO8601FormatStyle(timeZone: .current).year().month().day()))
+
 		let client = syphonServer.map {
 			SyphonCoreImageClient($0, device: device)
 		}
@@ -138,7 +139,7 @@ final class ProfileSession {
 				"""
 			}.joined(separator: "\n")
 
-		await withTaskGroup(of: Void.self) { [logger, url, captureSession] group in
+		await withTaskGroup(of: Void.self) { [logger, captureSession] group in
 			group.addTask {
 				do {
 					try variantPlaylist.write(
