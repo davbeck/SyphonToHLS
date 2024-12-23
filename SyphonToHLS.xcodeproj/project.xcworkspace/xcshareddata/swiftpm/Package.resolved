@@ -1,5 +1,5 @@
 {
-  "originHash" : "46e1809449e2643fdae7bd18f26b5ee9af92a0e0a8ec160998948804b6c06db3",
+  "originHash" : "18f37f93660f94a3ac83dcc6a4699cf961ea339442ec4a6c5900b8627a02da93",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -35,15 +35,6 @@
       "state" : {
         "revision" : "5e1b02b6a9dac2a759a1d5dbc175c86bd192a608",
         "version" : "24.0.0"
-      }
-    },
-    {
-      "identity" : "nwhttpprotocol",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/helje5/NWHTTPProtocol.git",
-      "state" : {
-        "revision" : "1f7c0f76667ca68710d4eb9aa83fbf78669c586c",
-        "version" : "0.1.0"
       }
     },
     {

@@ -21,9 +21,6 @@ extension AppStorageKey where Value == Bool {
 final class ProfileSession {
 	let appStorage = AppStorage.shared
 
-	@ObservationIgnored
-	lazy var webServer = WebServer(directory: self.url)
-
 	let device = MTLCreateSystemDefaultDevice()!
 
 	let syphonService = SyphonService()
@@ -92,8 +89,6 @@ final class ProfileSession {
 		self.updatePreview()
 
 		captureSession.startRunning()
-
-		await webServer.start()
 
 		var currentTask: Task<Void, Never>?
 		let currentServer = AsyncStream.makeObservationStream {
