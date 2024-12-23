@@ -214,14 +214,14 @@ final class ProfileSession {
 		withObservationTracking {
 			captureSession.beginConfiguration()
 
-			if monitorDeviceUID.isEmpty {
-				captureSession.removeOutput(previewOutput)
-			} else {
+			if audioOutputService.devices.contains(where: { $0.uid == monitorDeviceUID }) {
 				previewOutput.outputDeviceUniqueID = monitorDeviceUID
 
 				if !captureSession.outputs.contains(previewOutput), captureSession.canAddOutput(previewOutput) {
 					captureSession.addOutput(previewOutput)
 				}
+			} else {
+				captureSession.removeOutput(previewOutput)
 			}
 
 			captureSession.commitConfiguration()
