@@ -122,7 +122,7 @@ final class ProfileSession {
 			SyphonCoreImageClient($0, device: device)
 		}
 
-		let qualityLevels = VideoQualityLevel.allCases
+		let qualityLevels = [VideoQualityLevel.high]
 
 		let variantPlaylist =
 			"""
