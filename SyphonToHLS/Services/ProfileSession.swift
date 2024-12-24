@@ -31,8 +31,9 @@ final class ProfileSession {
 
 	var image: CIImage?
 
-	var url = URL.moviesDirectory
+	var baseURL = URL.moviesDirectory
 		.appendingPathComponent("Recordings")
+	var url: URL?
 
 	private let logger = Logger(category: "ProfileSession")
 
@@ -80,7 +81,7 @@ final class ProfileSession {
 	var isRunning = false
 
 	func start() async {
-		print("url", url.path())
+		print("url", baseURL.path())
 		guard await AVCaptureDevice.requestAccess(for: .audio) else { return }
 
 		self.updateAudioInput()
@@ -89,6 +90,8 @@ final class ProfileSession {
 		self.updatePreview()
 
 		captureSession.startRunning()
+		
+		updateAudioRecording()
 
 		var currentTask: Task<Void, Never>?
 		let currentServer = AsyncStream.makeObservationStream {
@@ -110,9 +113,10 @@ final class ProfileSession {
 		isRunning = true
 		defer { isRunning = false }
 
-		guard syphonServer != nil || audioDevice != nil else { return }
+		let url = self.baseURL.appending(component: Date.now.formatted(Date.ISO8601FormatStyle(timeZone: .current).year().month().day()))
+		self.url = url
 
-		let url = self.url.appending(component: Date.now.formatted(Date.ISO8601FormatStyle(timeZone: .current).year().month().day()))
+		guard syphonServer != nil || audioDevice != nil else { return }
 
 		let client = syphonServer.map {
 			SyphonCoreImageClient($0, device: device)
@@ -134,11 +138,11 @@ final class ProfileSession {
 				"""
 			}.joined(separator: "\n")
 
-		await withTaskGroup(of: Void.self) { [logger, captureSession] group in
+		await withTaskGroup(of: Void.self) { [logger] group in
 			group.addTask {
 				do {
 					try variantPlaylist.write(
-						to: url.appending(component: "live.m3u8"),
+						to: url.appending(path: "live.m3u8"),
 						atomically: true,
 						encoding: .utf8
 					)
@@ -160,7 +164,6 @@ final class ProfileSession {
 				}
 			}
 
-			// audioDevice: audioDevice
 			if let client {
 				for quality in qualityLevels {
 					group.addTask {
@@ -178,26 +181,6 @@ final class ProfileSession {
 				}
 			}
 
-			if let audioDevice {
-				group.addTask {
-					while !Task.isCancelled {
-						let audioService = HLSAudioService(
-							url: url,
-							audioDevice: audioDevice,
-							captureSession: captureSession,
-							uploader: uploader
-						)
-						do {
-							try await audioService.start()
-						} catch {
-							logger.error("hls session failed: \(error)")
-						}
-
-						try? await Task.sleep(for: .seconds(1))
-					}
-				}
-			}
-
 			if let client {
 				group.addTask { @MainActor in
 					for await frame in client.frames {
@@ -207,6 +190,32 @@ final class ProfileSession {
 			}
 
 			await group.waitForAll()
+		}
+	}
+
+	private var audioService: HLSAudioService?
+	func updateAudioRecording() {
+		withObservationTracking {
+			if self.appStorage[.isRunning], let audioDevice, let url {
+				audioService?.stop()
+
+				audioService = HLSAudioService(
+					url: url,
+					audioDevice: audioDevice,
+					captureSession: captureSession,
+					uploader: S3Uploader(appStorage: self.appStorage)
+				)
+				audioService?.start()
+			} else {
+				audioService?.stop()
+				audioService = nil
+			}
+		} onChange: { [weak self] in
+			RunLoop.main.perform {
+				MainActor.assumeIsolated {
+					self?.updateAudioRecording()
+				}
+			}
 		}
 	}
 
@@ -261,7 +270,7 @@ final class ProfileSession {
 		} onChange: { [weak self] in
 			RunLoop.main.perform {
 				MainActor.assumeIsolated {
-					self?.updatePreview()
+					self?.updateAudioInput()
 				}
 			}
 		}

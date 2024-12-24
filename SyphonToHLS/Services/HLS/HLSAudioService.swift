@@ -1,54 +1,51 @@
 import AVFoundation
 import OSLog
 
-actor HLSAudioService {
-	private let logger = Logger(category: "HLSAudioService")
-	private let clock = CMClock.hostTimeClock
-
-	private let assetWriter: AVAssetWriter
-	private let captureAudioDataOutputSampleBufferDelegate: CaptureAudioDataOutputSampleBufferDelegate
-	private let audioInput: AVAssetWriterInput
-	private let writers: [HLSWriter]
-	private var writerDelegate: WriterDelegate?
-
-	init(url: URL, audioDevice: AVCaptureDevice, captureSession: AVCaptureSession, uploader: S3Uploader) {
-		self.writers = [
-			HLSFileWriter(baseURL: url.appending(component: "audio")),
-			HLSS3Writer(uploader: uploader, stream: .audio),
-		]
-
-		self.assetWriter = AVAssetWriter.hlsWriter()
-
-		let audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: [
+extension AVAssetWriterInput {
+	static func hlsInput() -> AVAssetWriterInput {
+		let input = AVAssetWriterInput(mediaType: .audio, outputSettings: [
 			AVFormatIDKey: kAudioFormatMPEG4AAC,
 
 			AVSampleRateKey: 48000,
 			AVNumberOfChannelsKey: 1,
 			AVEncoderBitRateKey: 80 * 1024,
 		])
+		input.expectsMediaDataInRealTime = true
+		return input
+	}
+}
+
+final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate, @unchecked Sendable {
+	private let logger = Logger(category: "HLSAudioService")
+	private let clock = CMClock.hostTimeClock
+
+	private let queue = DispatchQueue(label: "HLSAudioService")
+
+	private var assetWriter = AVAssetWriter.hlsWriter()
+	private let captureAudioOutput = AVCaptureAudioDataOutput()
+	private var audioInput: AVAssetWriterInput = .hlsInput()
+	private let captureSession: AVCaptureSession
+	private let writers: [HLSWriter]
+	private var writerDelegate: WriterDelegate?
+
+	private var isRunning: Bool = false
+
+	init(url: URL, audioDevice: AVCaptureDevice, captureSession: AVCaptureSession, uploader: S3Uploader) {
+		self.captureSession = captureSession
+
+		self.writers = [
+			HLSFileWriter(baseURL: url.appending(component: "audio")),
+			HLSS3Writer(uploader: uploader, stream: .audio),
+		]
+
+		let audioInput = AVAssetWriterInput.hlsInput()
 		audioInput.expectsMediaDataInRealTime = true
-
-		captureAudioDataOutputSampleBufferDelegate = CaptureAudioDataOutputSampleBufferDelegate(
-			assetWriter: assetWriter,
-			audioInput: audioInput
-		)
-
-		captureSession.beginConfiguration()
-		let captureAudioOutput = AVCaptureAudioDataOutput()
-		captureAudioOutput.setSampleBufferDelegate(
-			captureAudioDataOutputSampleBufferDelegate,
-			queue: DispatchQueue(label: "hls_audio")
-		)
-		captureSession.addOutput(captureAudioOutput)
-		captureSession.commitConfiguration()
-
-		assetWriter.add(audioInput)
-
-		self.audioInput = audioInput
 	}
 
-	func start() async throws {
-		guard assetWriter.status == .unknown else { throw HLSAssetWriterError.invalidWriterStatus(assetWriter.status) }
+	private func setupAssetWriter() {
+		dispatchPrecondition(condition: .onQueue(queue))
+
+		assetWriter.add(audioInput)
 
 		var start = clock.time
 		let roundedSeconds = (start.seconds / 6).rounded(.up) * 6
@@ -65,53 +62,85 @@ actor HLSAudioService {
 		assetWriter.initialSegmentStartTime = start
 		assetWriter.startWriting()
 		assetWriter.startSession(atSourceTime: start)
-
-		defer {
-			audioInput.markAsFinished()
-			assetWriter.endSession(atSourceTime: clock.time)
-			assetWriter.cancelWriting()
-		}
-
-		for try await _ in captureAudioDataOutputSampleBufferDelegate.stream {}
 	}
 
-	final class CaptureAudioDataOutputSampleBufferDelegate: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
-		private let logger = Logger(category: "HLSAudioService")
+	private func cleanupAssetWriter() {
+		dispatchPrecondition(condition: .onQueue(queue))
 
-		private let continuation: AsyncThrowingStream<Void, Error>.Continuation
-		let stream: AsyncThrowingStream<Void, Error>
-
-		private let assetWriter: AVAssetWriter
-		private let audioInput: AVAssetWriterInput
-
-		init(assetWriter: AVAssetWriter, audioInput: AVAssetWriterInput) {
-			(stream, continuation) = AsyncThrowingStream.makeStream()
-
-			self.assetWriter = assetWriter
-			self.audioInput = audioInput
-
-			super.init()
+		audioInput.markAsFinished()
+		if assetWriter.status == .writing {
+			assetWriter.endSession(atSourceTime: clock.time)
+		 assetWriter.cancelWriting()
 		}
+	}
 
-		func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+	func start() {
+		queue.async { [self] in
+			isRunning = true
+
+			captureSession.beginConfiguration()
+			captureAudioOutput.setSampleBufferDelegate(
+				self,
+				queue: DispatchQueue(label: "hls_audio")
+			)
+			captureSession.addOutput(captureAudioOutput)
+			captureSession.commitConfiguration()
+
+			setupAssetWriter()
+		}
+	}
+
+	private func restart() {
+		dispatchPrecondition(condition: .onQueue(queue))
+
+		guard !isRunning else { return }
+
+		cleanupAssetWriter()
+
+		self.assetWriter = AVAssetWriter.hlsWriter()
+		self.audioInput = AVAssetWriterInput.hlsInput()
+
+		setupAssetWriter()
+	}
+
+	func stop() {
+		queue.async { [self] in
+			isRunning = false
+
+			captureSession.beginConfiguration()
+			captureSession.removeOutput(captureAudioOutput)
+			captureSession.commitConfiguration()
+
+			cleanupAssetWriter()
+		}
+	}
+
+	func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+		// AVCaptureAudioDataOutput will skip outputs if the callback queue is not free, so simulate being free by immediately switching queue's
+		queue.async { [self] in
 			switch assetWriter.status {
 			case .unknown:
-				return
+				logger.warning("asset writer unknown status: \(self.assetWriter.status.rawValue)")
+				self.restart()
 			case .cancelled:
-				continuation.finish(throwing: CancellationError())
+				logger.warning("asset writer cancelled")
+				self.restart()
 			case .failed:
-				continuation.finish(throwing: assetWriter.error ?? HLSAssetWriterError.invalidWriterStatus(assetWriter.status))
+				if let error = assetWriter.error {
+					logger.error("asset writer failed: \(error)")
+				} else {
+					logger.error("asset writer failed")
+				}
+
+				self.restart()
 			case .completed:
-				continuation.finish()
+				logger.warning("asset writer completed")
+				self.restart()
 			case .writing:
 				break
 			@unknown default:
-				return
-			}
-
-			guard audioInput.isReadyForMoreMediaData else {
-				logger.warning("audio input not ready")
-				return
+				logger.warning("asset writer unknown status: \(self.assetWriter.status.rawValue)")
+				self.restart()
 			}
 
 			audioInput.append(sampleBuffer)
