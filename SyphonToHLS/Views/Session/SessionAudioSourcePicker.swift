@@ -1,12 +1,13 @@
 import AVFoundation
 import SwiftUI
+import Dependencies
 
 struct SessionAudioSourcePicker: View {
-	@State private var session = ProfileSession.shared
+	@Dependency(\.profileSession) private var session
 	@State private var appStorage = AppStorage.shared
 
 	var body: some View {
-		Picker("Audio Source", selection: $session.audioDevice) {
+		Picker("Audio Source", selection: Bindable(session).audioDevice) {
 			Text("None")
 				.tag(AVCaptureDevice?.none)
 

@@ -15,8 +15,6 @@ final class ScheduleManager {
 	@ObservationIgnored
 	@Dependency(\.calendar) private var calendar
 
-	static let liveValue = ScheduleManager()
-
 	let logger = Logger(label: "Schedule")
 
 	var schedule: Config.Schedule {

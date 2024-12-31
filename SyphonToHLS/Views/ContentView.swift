@@ -1,9 +1,10 @@
 import AVFoundation
 import SwiftUI
 import Syphon
+import Dependencies
 
 struct ContentView: View {
-	@State private var session = ProfileSession.shared
+	@Dependency(\.profileSession) private var session
 	@State private var appStorage = AppStorage.shared
 
 	var body: some View {

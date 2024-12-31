@@ -1,5 +1,6 @@
 import AVFoundation
 import CoreImage
+import Dependencies
 import Metal
 import Observation
 import OSLog
@@ -12,13 +13,12 @@ extension AppStorageKey where Value == String {
 	static let monitorDeviceID = AppStorageKey(key: "monitorDeviceID")
 }
 
-extension AppStorageKey where Value == Bool {
-	static let isRunning = AppStorageKey(key: "isRunning")
-}
-
 @MainActor
 @Observable
 final class ProfileSession {
+	@ObservationIgnored
+	@Dependency(\.configManager) private var configManager
+
 	let appStorage = AppStorage.shared
 
 	let device = MTLCreateSystemDefaultDevice()!
@@ -37,7 +37,7 @@ final class ProfileSession {
 
 	private let logger = Logger(category: "ProfileSession")
 
-	static let shared = ProfileSession()
+	let qualityLevels = [VideoQualityLevel.high]
 
 	var syphonServerID: ServerDescription.ID? {
 		get {
@@ -78,80 +78,66 @@ final class ProfileSession {
 		}
 	}
 
-	var isRunning = false
-
-	func start() async {
-		print("url", baseURL.path())
-		guard await AVCaptureDevice.requestAccess(for: .audio) else { return }
-
-		self.updateAudioInput()
-
-		previewOutput.volume = 1
-		self.updatePreview()
-
-		captureSession.startRunning()
-		
-		updateAudioRecording()
-
-		var currentTask: Task<Void, Never>?
-		let currentServer = AsyncStream.makeObservationStream {
-			(self.appStorage[.isRunning], self.syphonServer, self.audioDevice, S3Uploader(appStorage: self.appStorage))
-		}
-		for await (isRunning, syphonServer, audioDevice, uploader) in currentServer {
-			print("isRunning", isRunning)
-			currentTask?.cancel()
-
-			guard isRunning else { continue }
-
-			currentTask = Task {
-				await self.start(syphonServer: syphonServer, audioDevice: audioDevice, uploader: uploader)
+	var isRunning = false {
+		didSet {
+			if isRunning {
+				self.url = self.baseURL.appending(component: Date.now.formatted(Date.ISO8601FormatStyle(timeZone: .current).year().month().day()))
+			} else {
+				self.url = nil
 			}
 		}
 	}
 
-	func start(syphonServer: ServerDescription?, audioDevice: AVCaptureDevice?, uploader: S3Uploader) async {
-		isRunning = true
-		defer { isRunning = false }
+	nonisolated
+	init() {}
 
-		let url = self.baseURL.appending(component: Date.now.formatted(Date.ISO8601FormatStyle(timeZone: .current).year().month().day()))
-		self.url = url
+	func setup() async {
+		print("url", baseURL.path())
+		guard await AVCaptureDevice.requestAccess(for: .audio) else { return }
 
-		guard syphonServer != nil || audioDevice != nil else { return }
+		self.trackAudioInput()
 
-		let client = syphonServer.map {
-			SyphonCoreImageClient($0, device: device)
-		}
+		previewOutput.volume = 1
+		self.trackPreview()
 
-		let qualityLevels = [VideoQualityLevel.high]
+		captureSession.startRunning()
 
-		let variantPlaylist =
-			"""
-			#EXTM3U
-			#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",LANGUAGE="en",NAME="English",AUTOSELECT=YES, DEFAULT=YES,URI="audio/live.m3u8"
+		writeVariantPlaylist()
+		trackVideoRecording()
+		trackAudioRecording()
+	}
 
+	func start() {
+		self.isRunning = true
+	}
 
-			""" +
-			qualityLevels.map {
+	func stop() {
+		self.isRunning = false
+	}
+
+	private func writeVariantPlaylist() {
+		withObservationTracking { [weak self] in
+			guard let self else { return }
+
+			guard self.isRunning else { return }
+
+			let uploader = S3Uploader(appStorage: self.appStorage)
+
+			let variantPlaylist =
 				"""
-				#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=\($0.bitrate),RESOLUTION=\(Int($0.resolutions.width))x\(Int($0.resolutions.height)),CODECS="avc1.4d401e",AUDIO="audio"
-				\($0.name)/live.m3u8
-				"""
-			}.joined(separator: "\n")
+				#EXTM3U
+				#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",LANGUAGE="en",NAME="English",AUTOSELECT=YES, DEFAULT=YES,URI="audio/live.m3u8"
 
-		await withTaskGroup(of: Void.self) { [logger] group in
-			group.addTask {
-				do {
-					try variantPlaylist.write(
-						to: url.appending(path: "live.m3u8"),
-						atomically: true,
-						encoding: .utf8
-					)
-				} catch {
-					logger.error("failed to write variant playlist to file \(error)")
-				}
-			}
 
-			group.addTask {
+				""" +
+				qualityLevels.map {
+					"""
+					#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=\($0.bitrate),RESOLUTION=\(Int($0.resolutions.width))x\(Int($0.resolutions.height)),CODECS="avc1.4d401e",AUDIO="audio"
+					\($0.name)/live.m3u8
+					"""
+				}.joined(separator: "\n")
+
+			Task {
 				do {
 					try await uploader.write(
 						data: .init(variantPlaylist.utf8),
@@ -160,43 +146,61 @@ final class ProfileSession {
 						shouldEnableCaching: false
 					)
 				} catch {
-					logger.error("failed to write variant playlist to s3 \(error)")
+					self.logger.error("failed to write variant playlist to s3 \(error)")
 				}
 			}
+		}
+	}
 
-			if let client {
-				for quality in qualityLevels {
-					group.addTask {
-						while !Task.isCancelled {
-							let videoService = HLSVideoService(url: url, syphonClient: client, uploader: uploader, quality: quality)
-							do {
-								try await videoService.start()
-							} catch {
-								logger.error("hls session failed: \(error)")
+	private var videoTask: Task<Void, Never>?
+	private func trackVideoRecording() {
+		withObservationTracking { [weak self, logger, qualityLevels] in
+			guard let self else { return }
+
+			videoTask?.cancel()
+
+			guard
+				let url,
+				let client = syphonServer.map({
+					SyphonCoreImageClient($0, device: self.device)
+				})
+			else { return }
+
+			let uploader = S3Uploader(appStorage: self.appStorage)
+
+			videoTask = Task {
+				await withTaskGroup(of: Void.self) { group in
+					for quality in qualityLevels {
+						group.addTask {
+							while !Task.isCancelled {
+								let videoService = HLSVideoService(
+									url: url,
+									syphonClient: client,
+									uploader: uploader,
+									quality: quality
+								)
+
+								do {
+									try await videoService.start()
+								} catch {
+									logger.error("hls session failed: \(error)")
+								}
+
+								try? await Task.sleep(for: .seconds(1))
 							}
-
-							try? await Task.sleep(for: .seconds(1))
 						}
 					}
+
+					await group.waitForAll()
 				}
 			}
-
-			if let client {
-				group.addTask { @MainActor in
-					for await frame in client.frames {
-						self.image = frame.image
-					}
-				}
-			}
-
-			await group.waitForAll()
 		}
 	}
 
 	private var audioService: HLSAudioService?
-	func updateAudioRecording() {
+	private func trackAudioRecording() {
 		withObservationTracking {
-			if self.appStorage[.isRunning], let audioDevice, let url {
+			if self.isRunning, let audioDevice, let url {
 				audioService?.stop()
 
 				audioService = HLSAudioService(
@@ -210,16 +214,12 @@ final class ProfileSession {
 				audioService?.stop()
 				audioService = nil
 			}
-		} onChange: { [weak self] in
-			RunLoop.main.perform {
-				MainActor.assumeIsolated {
-					self?.updateAudioRecording()
-				}
-			}
+		} onChanged: { [weak self] in
+			self?.trackAudioRecording()
 		}
 	}
 
-	func updatePreview() {
+	private func trackPreview() {
 		withObservationTracking {
 			captureSession.beginConfiguration()
 
@@ -234,17 +234,13 @@ final class ProfileSession {
 			}
 
 			captureSession.commitConfiguration()
-		} onChange: { [weak self] in
-			RunLoop.main.perform {
-				MainActor.assumeIsolated {
-					self?.updatePreview()
-				}
-			}
+		} onChanged: { [weak self] in
+			self?.trackPreview()
 		}
 	}
 
 	private var captureDeviceInput: AVCaptureDeviceInput?
-	func updateAudioInput() {
+	private func trackAudioInput() {
 		withObservationTracking {
 			guard captureDeviceInput?.device != self.audioDevice else { return }
 
@@ -267,34 +263,20 @@ final class ProfileSession {
 			}
 
 			captureSession.commitConfiguration()
-		} onChange: { [weak self] in
-			RunLoop.main.perform {
-				MainActor.assumeIsolated {
-					self?.updateAudioInput()
-				}
-			}
+		} onChanged: { [weak self] in
+			self?.trackAudioInput()
 		}
 	}
 }
 
-extension AsyncStream {
-	@MainActor
-	static func makeObservationStream(_ apply: @escaping () -> Element) -> AsyncStream<Element> {
-		let (stream, continuation) = AsyncStream.makeStream()
-		func next() {
-			continuation.yield(withObservationTracking {
-				apply()
-			} onChange: {
-				RunLoop.main.perform {
-					MainActor.assumeIsolated {
-						next()
-					}
-				}
-			})
-		}
+extension ProfileSession: DependencyKey {
+	nonisolated
+	static let liveValue = ProfileSession()
+}
 
-		next()
-
-		return stream
+extension DependencyValues {
+	var profileSession: ProfileSession {
+		get { self[ProfileSession.self] }
+		set { self[ProfileSession.self] = newValue }
 	}
 }

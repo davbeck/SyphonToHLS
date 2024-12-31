@@ -1,13 +1,14 @@
 import SwiftUI
+import Dependencies
 
 struct SessionStartStopButton: View {
-	@State private var appStorage = AppStorage.shared
+	@Dependency(\.profileSession) private var profileSession
 
 	var body: some View {
 		Button {
-			appStorage[.isRunning].toggle()
+			profileSession.isRunning.toggle()
 		} label: {
-			if appStorage[.isRunning] {
+			if profileSession.isRunning {
 				Text("Stop")
 			} else {
 				Text("Start")
