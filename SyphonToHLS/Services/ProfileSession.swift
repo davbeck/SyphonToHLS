@@ -39,7 +39,7 @@ final class ProfileSession {
 
 	private let logger = Logger(category: "ProfileSession")
 
-	let qualityLevels = [VideoQualityLevel.high]
+	let qualityLevels = VideoQualityLevel.allCases
 
 	var syphonServerID: ServerDescription.ID? {
 		get {
