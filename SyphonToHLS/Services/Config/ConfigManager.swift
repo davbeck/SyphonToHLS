@@ -19,7 +19,7 @@ final class ConfigManager {
 					let data = try encoder.encode(config)
 					try data.write(to: url)
 				} catch {
-					logger.error("failed to save schedule: \(error)")
+					logger.error("failed to save config: \(error)")
 				}
 			}
 		}
@@ -37,6 +37,15 @@ final class ConfigManager {
 			do {
 				let data = try Data(contentsOf: url)
 				self._config = try decoder.decode(Config.self, from: data)
+			} catch CocoaError.fileReadNoSuchFile {
+				self._config = Config()
+				
+				do {
+					let data = try encoder.encode(self._config)
+					try data.write(to: url)
+				} catch {
+					logger.error("failed to save config: \(error)")
+				}
 			} catch {
 				logger.error("failed to load config: \(error)")
 

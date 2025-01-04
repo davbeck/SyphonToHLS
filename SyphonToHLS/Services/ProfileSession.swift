@@ -19,6 +19,8 @@ final class ProfileSession {
 	@ObservationIgnored
 	@Dependency(\.configManager) private var configManager
 
+	let scheduleManager = ScheduleManager()
+
 	let appStorage = AppStorage.shared
 
 	let device = MTLCreateSystemDefaultDevice()!
@@ -105,6 +107,7 @@ final class ProfileSession {
 		writeVariantPlaylist()
 		trackVideoRecording()
 		trackAudioRecording()
+		trackSchedule()
 	}
 
 	func start() {
@@ -113,6 +116,26 @@ final class ProfileSession {
 
 	func stop() {
 		self.isRunning = false
+	}
+
+	private func trackSchedule() {
+		let isActive = withObservationTracking {
+			scheduleManager.isActive
+		} onChanged: { [weak self] in
+			self?.trackScheduleChange()
+		}
+
+		if isActive {
+			self.isRunning = true
+		}
+	}
+
+	private func trackScheduleChange() {
+		self.isRunning = withObservationTracking {
+			scheduleManager.isActive
+		} onChanged: { [weak self] in
+			self?.trackScheduleChange()
+		}
 	}
 
 	private func writeVariantPlaylist() {

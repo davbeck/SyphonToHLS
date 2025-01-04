@@ -5,7 +5,7 @@ extension URL {
 		let url = URL
 			.homeDirectory
 			.appending(component: ".config")
-			.appending(component: ".SyphonToHLS")
+			.appending(component: "SyphonToHLS")
 
 		try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
 
