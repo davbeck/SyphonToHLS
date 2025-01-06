@@ -4,7 +4,6 @@ import Dependencies
 
 struct SessionAudioSourcePicker: View {
 	@Dependency(\.profileSession) private var session
-	@State private var appStorage = AppStorage.shared
 
 	var body: some View {
 		Picker("Audio Source", selection: Bindable(session).audioDevice) {

@@ -39,7 +39,7 @@ final class ConfigManager {
 				self._config = try decoder.decode(Config.self, from: data)
 			} catch CocoaError.fileReadNoSuchFile {
 				self._config = Config()
-				
+
 				do {
 					let data = try encoder.encode(self._config)
 					try data.write(to: url)

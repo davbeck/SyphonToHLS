@@ -6,13 +6,6 @@ import Observation
 import OSLog
 import SimplyCoreAudio
 
-extension AppStorageKey where Value == String {
-	static let syphonServerName = AppStorageKey(key: "syphonServerName")
-	static let syphonServerApp = AppStorageKey(key: "syphonServerApp")
-	static let audioDeviceID = AppStorageKey(key: "audioDeviceID")
-	static let monitorDeviceID = AppStorageKey(key: "monitorDeviceID")
-}
-
 @MainActor
 @Observable
 final class ProfileSession {
@@ -20,8 +13,6 @@ final class ProfileSession {
 	@Dependency(\.configManager) private var configManager
 
 	let scheduleManager = ScheduleManager()
-
-	let appStorage = AppStorage.shared
 
 	let device = MTLCreateSystemDefaultDevice()!
 
@@ -43,15 +34,10 @@ final class ProfileSession {
 
 	var syphonServerID: ServerDescription.ID? {
 		get {
-			let name = appStorage[.syphonServerName]
-			let appName = appStorage[.syphonServerApp]
-			guard !name.isEmpty, !appName.isEmpty else { return nil }
-
-			return ServerDescription.ID(appName: appName, name: name)
+			configManager.config.syphonServerID
 		}
 		set {
-			appStorage[.syphonServerName] = newValue?.name ?? ""
-			appStorage[.syphonServerApp] = newValue?.appName ?? ""
+			configManager.config.syphonServerID = newValue
 		}
 	}
 
@@ -63,20 +49,20 @@ final class ProfileSession {
 	var audioDevice: AVCaptureDevice? {
 		get {
 			// by looking in audioSourceService, we will trigger an observation update if something becomes available
-			audioSourceService.devices.first(where: { $0.uniqueID == appStorage[.audioDeviceID] }) ??
-				AVCaptureDevice(uniqueID: appStorage[.audioDeviceID])
+			audioSourceService.devices.first(where: { $0.uniqueID == configManager.config.audioDeviceID }) ??
+				AVCaptureDevice(uniqueID: configManager.config.audioDeviceID)
 		}
 		set {
-			appStorage[.audioDeviceID] = newValue?.uniqueID ?? ""
+			configManager.config.audioDeviceID = newValue?.uniqueID ?? ""
 		}
 	}
 
 	var monitorDeviceUID: String {
 		get {
-			appStorage[.monitorDeviceID]
+			configManager.config.monitorDeviceID
 		}
 		set {
-			appStorage[.monitorDeviceID] = newValue
+			configManager.config.monitorDeviceID = newValue
 		}
 	}
 
@@ -144,7 +130,7 @@ final class ProfileSession {
 
 			guard self.isRunning else { return }
 
-			let uploader = S3Uploader(appStorage: self.appStorage)
+			let uploader = S3Uploader(configManager.config.aws)
 
 			let variantPlaylist =
 				"""
@@ -189,7 +175,7 @@ final class ProfileSession {
 				})
 			else { return }
 
-			let uploader = S3Uploader(appStorage: self.appStorage)
+			let uploader = S3Uploader(configManager.config.aws)
 
 			videoTask = Task {
 				await withTaskGroup(of: Void.self) { group in
@@ -230,7 +216,7 @@ final class ProfileSession {
 					url: url,
 					audioDevice: audioDevice,
 					captureSession: captureSession,
-					uploader: S3Uploader(appStorage: self.appStorage)
+					uploader: S3Uploader(configManager.config.aws)
 				)
 				audioService?.start()
 			} else {

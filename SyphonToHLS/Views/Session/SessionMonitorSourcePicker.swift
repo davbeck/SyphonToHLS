@@ -5,7 +5,6 @@ import SwiftUI
 
 struct SessionMonitorSourcePicker: View {
 	@Dependency(\.profileSession) private var session
-	@State private var appStorage = AppStorage.shared
 
 	var body: some View {
 		Picker("Audio Monitor", selection: Bindable(session).monitorDeviceUID) {

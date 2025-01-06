@@ -3,7 +3,6 @@ import SwiftUI
 
 struct SessionVideoSourcePicker: View {
 	@Dependency(\.profileSession) private var session
-	@State private var appStorage = AppStorage.shared
 
 	var body: some View {
 		Picker("Video Source", selection: Bindable(session).syphonServerID) {
@@ -11,7 +10,7 @@ struct SessionVideoSourcePicker: View {
 				.tag(ServerDescription.ID?.none)
 
 			if let syphonServerID = session.syphonServerID, !session.syphonService.servers.contains(where: { $0.id == syphonServerID }) {
-				Text("\(appStorage[.syphonServerApp]) - \(appStorage[.syphonServerName]) (Unavailable)")
+				Text("\(syphonServerID.appName) - \(syphonServerID.name) (Unavailable)")
 					.tag(Optional.some(syphonServerID))
 					.disabled(true)
 			}

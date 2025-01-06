@@ -2,7 +2,7 @@ import Cocoa
 import Syphon
 
 struct ServerDescription: Identifiable {
-	struct ID: Hashable {
+	struct ID: Hashable, Codable {
 		var appName: String
 		var name: String
 	}

@@ -6,7 +6,6 @@ import SwiftUI
 struct ContentMenuView: View {
 	@Dependency(\.performanceTracker) private var performanceTracker
 	@Dependency(\.profileSession) private var session
-	@State private var appStorage = AppStorage.shared
 
 	var body: some View {
 		VStack {

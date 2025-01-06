@@ -5,7 +5,6 @@ import SwiftUI
 struct MenuBarLabel: View {
 	@Dependency(\.profileSession) private var session
 
-	@State private var appStorage = AppStorage.shared
 	@State private var animationValue: Double = 0
 
 	var body: some View {

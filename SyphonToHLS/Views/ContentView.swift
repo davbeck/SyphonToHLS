@@ -5,7 +5,6 @@ import Dependencies
 
 struct ContentView: View {
 	@Dependency(\.profileSession) private var session
-	@State private var appStorage = AppStorage.shared
 
 	var body: some View {
 		VStack {

@@ -1,7 +1,20 @@
 import Foundation
+import MetaCodable
 
-struct Config: Codable {
-	var schedule: Schedule = .init()
+@Codable
+@MemberInit
+struct Config {
+	@Default(Schedule())
+	var schedule: Schedule
+
+	var syphonServerID: ServerDescription.ID?
+	@Default("")
+	var audioDeviceID: String
+	@Default("")
+	var monitorDeviceID: String
+
+	@Default(AWS())
+	var aws: AWS
 }
 
 extension Config {
@@ -15,5 +28,14 @@ extension Config {
 			self.weekdays
 				.map { DateComponents(hour: startHour, minute: startMinute, weekday: $0) }
 		}
+	}
+}
+
+extension Config {
+	struct AWS: Codable {
+		var region: String = ""
+		var bucket: String = ""
+		var clientKey: String = ""
+		var clientSecret: String = ""
 	}
 }

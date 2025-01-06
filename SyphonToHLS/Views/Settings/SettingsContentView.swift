@@ -1,15 +1,18 @@
 import SwiftUI
+import Dependencies
 
 struct SettingsContentView: View {
-	@State private var appStorage = AppStorage.shared
-
+	@Dependency(\.configManager) private var configManager
+	
 	var body: some View {
+		@Bindable var configManager = self.configManager
+		
 		Form {
 			Section("AWS Credentials") {
-				TextField("Region", text: $appStorage[.awsRegion])
-				TextField("S3 Bucket", text: $appStorage[.awsS3Bucket])
-				TextField("Client Key", text: $appStorage[.awsClientKey])
-				TextField("Client Secret", text: $appStorage[.awsClientSecret])
+				TextField("Region", text: $configManager.config.aws.region)
+				TextField("S3 Bucket", text: $configManager.config.aws.bucket)
+				TextField("Client Key", text: $configManager.config.aws.clientKey)
+				TextField("Client Secret", text: $configManager.config.aws.clientSecret)
 			}
 		}
 		.padding()

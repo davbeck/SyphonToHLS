@@ -62,29 +62,6 @@ actor HLSFileWriter: HLSWriter {
 	}
 }
 
-struct AppStorageCredentialProvider: CredentialProvider {
-	@MainActor
-	func getCredential(logger: Logging.Logger) async throws -> any SotoSignerV4.Credential {
-		let appStorage = AppStorage.shared
-		return StaticCredential(
-			accessKeyId: appStorage[.awsClientKey],
-			secretAccessKey: appStorage[.awsClientSecret]
-		)
-	}
-}
-
-public extension CredentialProviderFactory {
-	static var app: CredentialProviderFactory {
-		.custom { context in
-			AppStorageCredentialProvider()
-		}
-	}
-}
-
-extension AWSClient {
-	static let app = AWSClient(credentialProvider: .app)
-}
-
 actor HLSS3Writer: HLSWriter {
 	@Dependency(\.performanceTracker) private var performanceTracker
 
@@ -179,20 +156,32 @@ actor HLSS3Writer: HLSWriter {
 }
 
 struct S3Uploader {
-	let client = AWSClient.app
 	let s3: S3
 	let bucket: String
 
-	@MainActor
-	init(appStorage: AppStorage) {
-		s3 = S3(
-			client: client,
-			region: .init(
-				awsRegionName: appStorage[.awsRegion]
-			),
-			timeout: .seconds(10)
+	init(s3: S3, bucket: String) {
+		self.s3 = s3
+		self.bucket = bucket
+	}
+
+	init(_ aws: Config.AWS) {
+		let client = AWSClient(
+			credentialProvider: .static(
+				accessKeyId: aws.clientKey,
+				secretAccessKey: aws.clientSecret
+			)
 		)
-		bucket = appStorage[.awsS3Bucket]
+
+		self.init(
+			s3: S3(
+				client: client,
+				region: .init(
+					awsRegionName: aws.region
+				),
+				timeout: .seconds(10)
+			),
+			bucket: aws.bucket
+		)
 	}
 
 	func write(
