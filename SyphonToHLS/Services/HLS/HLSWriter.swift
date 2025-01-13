@@ -155,7 +155,7 @@ actor HLSS3Writer: HLSWriter {
 	}
 }
 
-struct S3Uploader {
+final class S3Uploader {
 	let s3: S3
 	let bucket: String
 
@@ -164,7 +164,7 @@ struct S3Uploader {
 		self.bucket = bucket
 	}
 
-	init(_ aws: Config.AWS) {
+	convenience init(_ aws: Config.AWS) {
 		let client = AWSClient(
 			credentialProvider: .static(
 				accessKeyId: aws.clientKey,
@@ -182,6 +182,13 @@ struct S3Uploader {
 			),
 			bucket: aws.bucket
 		)
+	}
+
+	deinit {
+		let client = s3.client
+		Task {
+			try await client.shutdown()
+		}
 	}
 
 	func write(
