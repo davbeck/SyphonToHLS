@@ -1,6 +1,6 @@
 import Dependencies
 import Foundation
-import Logging
+import OSLog
 import Observation
 
 @MainActor
@@ -15,7 +15,7 @@ final class ScheduleManager {
 	@ObservationIgnored
 	@Dependency(\.calendar) private var calendar
 
-	let logger = Logger(label: "Schedule")
+	let logger = Logger(category: "Schedule")
 
 	var schedule: Config.Schedule {
 		get { configManager.config.schedule }

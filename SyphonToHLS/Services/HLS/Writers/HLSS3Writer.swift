@@ -1,61 +1,9 @@
+import AWSSigner
 import Dependencies
 import Foundation
 import OSLog
 import Queue
-import SotoCore
-import SotoS3
 import UniformTypeIdentifiers
-
-actor HLSFileWriter: HLSWriter {
-	private let logger = os.Logger(category: "HLSFileWriter")
-
-	var records: [HLSRecord] = []
-
-	let baseURL: URL
-
-	init(baseURL: URL) {
-		self.baseURL = baseURL
-
-		try? FileManager.default.createDirectory(
-			at: baseURL,
-			withIntermediateDirectories: true
-		)
-	}
-
-	func write(_ segment: HLSSegment) async throws {
-		do {
-			switch segment.type {
-			case .initialization:
-				try segment.data.write(
-					to: baseURL
-						.appending(component: "0.mp4"),
-					options: .atomic
-				)
-			case .separable:
-				let record = HLSRecord(
-					index: segment.index,
-					duration: segment.duration
-				)
-				records.append(record)
-
-				try segment.data.write(
-					to: baseURL
-						.appending(component: record.name),
-					options: .atomic
-				)
-				try Data(records.suffix(10).hlsPlaylist(prefix: nil).utf8).write(
-					to: baseURL
-						.appending(component: "live.m3u8"),
-					options: .atomic
-				)
-			@unknown default:
-				return
-			}
-		} catch {
-			logger.error("failed to write segment: \(error)")
-		}
-	}
-}
 
 actor HLSS3Writer: HLSWriter {
 	@Dependency(\.performanceTracker) private var performanceTracker
@@ -151,39 +99,16 @@ actor HLSS3Writer: HLSWriter {
 }
 
 final class S3Uploader {
-	let s3: S3
-	let bucket: String
+	let config: Config.AWS
 
-	init(s3: S3, bucket: String) {
-		self.s3 = s3
-		self.bucket = bucket
+	init(_ config: Config.AWS) {
+		self.config = config
 	}
 
-	convenience init(_ aws: Config.AWS) {
-		let client = AWSClient(
-			credentialProvider: .static(
-				accessKeyId: aws.clientKey,
-				secretAccessKey: aws.clientSecret
-			)
-		)
-
-		self.init(
-			s3: S3(
-				client: client,
-				region: .init(
-					awsRegionName: aws.region
-				),
-				timeout: .seconds(10)
-			),
-			bucket: aws.bucket
-		)
-	}
-
-	deinit {
-		let client = s3.client
-		Task {
-			try await client.shutdown()
-		}
+	enum Error: Swift.Error {
+		case invalidURLError(urlString: String)
+		case invalidURLResponse(URLResponse)
+		case unexpectedStatusCode(Int, responseBody: String)
 	}
 
 	func write(
@@ -192,13 +117,55 @@ final class S3Uploader {
 		type: UTType,
 		shouldEnableCaching: Bool
 	) async throws {
-		let putObjectRequest = S3.PutObjectRequest(
-			body: .init(bytes: data),
-			bucket: bucket,
-			cacheControl: shouldEnableCaching ? "max-age=31536000, immutable" : "max-age=0, no-cache",
-			contentType: type.preferredMIMEType ?? "",
-			key: key
+		let urlString = "https://\(config.bucket).s3.\(config.region).amazonaws.com/\(key)"
+		guard let url = URL(string: urlString) else {
+			throw Error.invalidURLError(urlString: urlString)
+		}
+
+		let credentials = StaticCredential(
+			accessKeyId: config.clientKey,
+			secretAccessKey: config.clientSecret
 		)
-		_ = try await s3.putObject(putObjectRequest)
+		let signer = AWSSigner(
+			credentials: credentials,
+			name: "s3",
+			region: config.region
+		)
+		let signedHeaders = signer.signHeaders(
+			url: url,
+			method: .PUT,
+			headers: [
+				"Cache-Control": shouldEnableCaching ? "max-age=31536000, immutable" : "max-age=0, no-cache",
+				"Content-Type": type.preferredMIMEType ?? "",
+			],
+			body: .data(data)
+		)
+
+		var urlRequest = URLRequest(url: url)
+		urlRequest.httpMethod = "PUT"
+		for (name, value) in signedHeaders {
+			urlRequest.addValue(value, forHTTPHeaderField: name)
+		}
+
+		let (outputData, response) = try await URLSession.s3.upload(for: urlRequest, from: data)
+
+		guard let response = response as? HTTPURLResponse else { throw Error.invalidURLResponse(response) }
+		guard response.statusCode == 200 else {
+			throw Error.unexpectedStatusCode(
+				response.statusCode,
+				responseBody: String(bytes: outputData, encoding: .utf8) ?? ""
+			)
+		}
 	}
+}
+
+private extension URLSession {
+	static let s3: URLSession = {
+		let configuration = URLSessionConfiguration.default
+		configuration.timeoutIntervalForRequest = segmentInterval
+		configuration.timeoutIntervalForResource = segmentInterval * 10
+		let session = URLSession(configuration: configuration)
+
+		return session
+	}()
 }

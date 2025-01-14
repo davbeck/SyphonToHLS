@@ -1,12 +1,12 @@
 import Dependencies
 import Foundation
-import Logging
+import OSLog
 import Observation
 
 @MainActor
 @Observable
 final class ConfigManager {
-	let logger = Logger(label: "Config")
+	let logger = Logger(category: "Config")
 
 	let decoder = JSONDecoder()
 	let encoder = JSONEncoder()
