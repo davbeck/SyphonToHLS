@@ -66,7 +66,8 @@ actor HLSVideoService {
 		guard assetWriter.status == .unknown else { throw HLSAssetWriterError.invalidWriterStatus(assetWriter.status) }
 
 		var start = clock.time
-		let roundedSeconds = (start.seconds / 6).rounded(.up) * 6
+		let preferredOutputSegmentInterval = assetWriter.preferredOutputSegmentInterval.seconds
+		let roundedSeconds = (start.seconds / preferredOutputSegmentInterval).rounded(.up) * preferredOutputSegmentInterval
 		start = CMTime(seconds: roundedSeconds, preferredTimescale: start.timescale)
 
 		self.writerDelegate = WriterDelegate(
