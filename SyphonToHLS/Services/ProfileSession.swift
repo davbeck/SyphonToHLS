@@ -24,8 +24,6 @@ final class ProfileSession {
 	let captureSession = AVCaptureSession()
 	let previewOutput = AVCaptureAudioPreviewOutput()
 
-	var image: CIImage?
-
 	var baseURL = URL.moviesDirectory
 		.appendingPathComponent("Recordings")
 	var url: URL?
@@ -46,6 +44,22 @@ final class ProfileSession {
 	var syphonServer: ServerDescription? {
 		guard let syphonServerID else { return nil }
 		return syphonService.servers.first(where: { $0.id == syphonServerID })
+	}
+	
+	@ObservationIgnored
+	private weak var _syphonClient: SyphonCoreImageClient?
+	var syphonClient: SyphonCoreImageClient? {
+		if let _syphonClient, _syphonClient.serverDescription.id == self.syphonServerID {
+			return _syphonClient
+		} else if let syphonServer {
+			let syphonClient = SyphonCoreImageClient(syphonServer, device: self.device)
+
+			_syphonClient = syphonClient
+
+			return syphonClient
+		} else {
+			return nil
+		}
 	}
 
 	var audioDevice: AVCaptureDevice? {
@@ -185,9 +199,7 @@ final class ProfileSession {
 
 			guard
 				let url,
-				let client = syphonServer.map({
-					SyphonCoreImageClient($0, device: self.device)
-				})
+				let client = self.syphonClient
 			else { return }
 
 			let uploader = S3Uploader(configManager.config.aws)

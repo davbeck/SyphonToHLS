@@ -16,23 +16,23 @@ struct SyphonToHLSApp: App {
 	}
 
 	var body: some Scene {
-		MenuBarExtra {
-			if !isTesting {
-				ContentMenuView()
-			}
-		} label: {
-			if !isTesting {
-				MenuBarLabel()
-			}
-		}
-		.menuBarExtraStyle(.window)
-
 		Window("Preview", id: "preview") {
 			if !isTesting {
 				ContentView()
 			}
 		}
-		.defaultLaunchBehavior(.suppressed)
+//		.defaultLaunchBehavior(.suppressed)
+		
+			MenuBarExtra {
+				if !isTesting {
+					ContentMenuView()
+				}
+			} label: {
+				if !isTesting {
+					MenuBarLabel()
+				}
+			}
+			.menuBarExtraStyle(.window)
 
 		Settings {
 			SettingsContentView()

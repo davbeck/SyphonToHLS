@@ -1,7 +1,7 @@
 import Cocoa
 import Syphon
 
-struct ServerDescription: Identifiable {
+struct ServerDescription: Identifiable, @unchecked Sendable {
 	struct ID: Hashable, Codable {
 		var appName: String
 		var name: String

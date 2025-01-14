@@ -11,11 +11,12 @@ struct ContentView: View {
 			SessionVideoSourcePicker()
 
 			SessionAudioSourcePicker()
+			
+			SessionMonitorSourcePicker()
 
-			MetalView(
-				device: session.device,
-				image: session.image
-			)
+			if let syphonClient = session.syphonClient {
+				SyphonPreviewView(client: syphonClient)
+			}
 
 			HStack {
 				Spacer()

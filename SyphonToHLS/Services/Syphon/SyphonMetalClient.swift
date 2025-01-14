@@ -2,7 +2,7 @@ import Cocoa
 import Combine
 import CoreImage
 import CoreMedia
-import Metal
+@preconcurrency import Metal
 @preconcurrency import Syphon
 
 final class SyphonCoreImageClient: Sendable {
@@ -11,15 +11,21 @@ final class SyphonCoreImageClient: Sendable {
 		var image: CIImage
 	}
 
+	let device: any MTLDevice
 	private let metalClient: SyphonMetalClient
 	let clock = CMClock.hostTimeClock
 	let frames: SharedStream<Frame>
+	
+	let serverDescription: ServerDescription
 
 	init(
 		_ serverDescription: ServerDescription,
 		device: any MTLDevice,
 		options: [AnyHashable: Any]? = nil
 	) {
+		self.device = device
+		self.serverDescription = serverDescription
+		
 		let (stream, continuation) = AsyncStream.makeStream(of: Frame.self)
 		self.frames = stream.share()
 
