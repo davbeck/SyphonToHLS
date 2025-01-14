@@ -7,7 +7,6 @@ import SotoS3
 import UniformTypeIdentifiers
 
 actor HLSFileWriter: HLSWriter {
-	private let queue = DispatchQueue(label: "HLSFileWriter")
 	private let logger = os.Logger(category: "HLSFileWriter")
 
 	var records: [HLSRecord] = []
@@ -17,47 +16,43 @@ actor HLSFileWriter: HLSWriter {
 	init(baseURL: URL) {
 		self.baseURL = baseURL
 
-		queue.async {
-			try? FileManager.default.createDirectory(
-				at: baseURL,
-				withIntermediateDirectories: true
-			)
-		}
+		try? FileManager.default.createDirectory(
+			at: baseURL,
+			withIntermediateDirectories: true
+		)
 	}
 
 	func write(_ segment: HLSSegment) async throws {
-		let record = HLSRecord(
-			index: segment.index,
-			duration: segment.duration
-		)
-		records.append(record)
+		do {
+			switch segment.type {
+			case .initialization:
+				try segment.data.write(
+					to: baseURL
+						.appending(component: "0.mp4"),
+					options: .atomic
+				)
+			case .separable:
+				let record = HLSRecord(
+					index: segment.index,
+					duration: segment.duration
+				)
+				records.append(record)
 
-		queue.async { [baseURL, logger, records] in
-			do {
-				switch segment.type {
-				case .initialization:
-					try segment.data.write(
-						to: baseURL
-							.appending(component: "0.mp4"),
-						options: .atomic
-					)
-				case .separable:
-					try segment.data.write(
-						to: baseURL
-							.appending(component: record.name),
-						options: .atomic
-					)
-					try Data(records.suffix(60 * 5).hlsPlaylist(prefix: nil).utf8).write(
-						to: baseURL
-							.appending(component: "live.m3u8"),
-						options: .atomic
-					)
-				@unknown default:
-					return
-				}
-			} catch {
-				logger.error("failed to write segment: \(error)")
+				try segment.data.write(
+					to: baseURL
+						.appending(component: record.name),
+					options: .atomic
+				)
+				try Data(records.suffix(10).hlsPlaylist(prefix: nil).utf8).write(
+					to: baseURL
+						.appending(component: "live.m3u8"),
+					options: .atomic
+				)
+			@unknown default:
+				return
 			}
+		} catch {
+			logger.error("failed to write segment: \(error)")
 		}
 	}
 }

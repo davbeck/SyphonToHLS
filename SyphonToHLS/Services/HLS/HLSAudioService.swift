@@ -93,7 +93,7 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 	private func restart() {
 		dispatchPrecondition(condition: .onQueue(queue))
 
-		guard !isRunning else { return }
+		guard isRunning else { return }
 
 		cleanupAssetWriter()
 

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		110A34902D35C9D900524032 /* NWHTTPServer in Frameworks */ = {isa = PBXBuildFile; productRef = 110A348F2D35C9D900524032 /* NWHTTPServer */; };
 		111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 111477002C7E90C600C4E395 /* KeychainSwift */; };
 		1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; };
 		1127AC512C76375D004C5D8C /* Syphon.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -78,6 +79,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				113A5FEF2D13BC580029F1ED /* SimplyCoreAudio in Frameworks */,
+				110A34902D35C9D900524032 /* NWHTTPServer in Frameworks */,
 				111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */,
 				1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */,
 				11C0250E2D0BE0C6007457C8 /* SFSafeSymbols in Frameworks */,
@@ -162,6 +164,7 @@
 				11C0250D2D0BE0C6007457C8 /* SFSafeSymbols */,
 				113A5FEE2D13BC580029F1ED /* SimplyCoreAudio */,
 				11E07C982D29FE320095F157 /* MetaCodable */,
+				110A348F2D35C9D900524032 /* NWHTTPServer */,
 			);
 			productName = SyphonToHLS;
 			productReference = 1127AC1B2C7636F8004C5D8C /* SyphonToHLS.app */;
@@ -254,6 +257,7 @@
 				11C120712D0B3278003C05CA /* XCRemoteSwiftPackageReference "swift-dependencies" */,
 				113A5F9A2D139ED20029F1ED /* XCRemoteSwiftPackageReference "SimplyCoreAudio" */,
 				11DC815F2D29FD4C004836A4 /* XCRemoteSwiftPackageReference "MetaCodable" */,
+				110A342A2D35C99600524032 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */,
 			);
 			productRefGroup = 1127AC1C2C7636F8004C5D8C /* Products */;
 			projectDirPath = "";
@@ -631,6 +635,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		110A342A2D35C99600524032 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/helje5/NWHTTPProtocol.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
 		111476FF2C7E81B900C4E395 /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/evgenyneu/keychain-swift.git";
@@ -690,6 +702,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		110A348F2D35C9D900524032 /* NWHTTPServer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 110A342A2D35C99600524032 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */;
+			productName = NWHTTPServer;
+		};
 		111477002C7E90C600C4E395 /* KeychainSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 111476FF2C7E81B900C4E395 /* XCRemoteSwiftPackageReference "keychain-swift" */;

@@ -12,6 +12,8 @@ final class ProfileSession {
 	@ObservationIgnored
 	@Dependency(\.configManager) private var configManager
 
+	private var webServer: WebServer?
+
 	let scheduleManager = ScheduleManager()
 
 	let device = MTLCreateSystemDefaultDevice()!
@@ -94,6 +96,7 @@ final class ProfileSession {
 		trackVideoRecording()
 		trackAudioRecording()
 		trackSchedule()
+		trackWebServer()
 	}
 
 	func start() {
@@ -125,9 +128,7 @@ final class ProfileSession {
 	}
 
 	private func writeVariantPlaylist() {
-		withObservationTracking { [weak self] in
-			guard let self else { return }
-
+		withObservationTracking {
 			guard self.isRunning else { return }
 
 			let uploader = S3Uploader(configManager.config.aws)
@@ -146,6 +147,17 @@ final class ProfileSession {
 					"""
 				}.joined(separator: "\n")
 
+			if let url {
+				Task {
+					do {
+						let playlistURL = url.appendingPathComponent("live.m3u8")
+						try variantPlaylist.write(to: playlistURL, atomically: true, encoding: .utf8)
+					} catch {
+						self.logger.error("failed to write variant playlist to file \(error)")
+					}
+				}
+			}
+
 			Task {
 				do {
 					try await uploader.write(
@@ -158,6 +170,8 @@ final class ProfileSession {
 					self.logger.error("failed to write variant playlist to s3 \(error)")
 				}
 			}
+		} onChanged: { [weak self] in
+			self?.writeVariantPlaylist()
 		}
 	}
 
@@ -275,6 +289,24 @@ final class ProfileSession {
 		} onChanged: { [weak self] in
 			self?.trackAudioInput()
 		}
+	}
+
+	private func trackWebServer() {
+		let url = withObservationTracking {
+			self.url
+		} onChanged: { [weak self] in
+			self?.trackWebServer()
+		}
+
+		guard let url else { return }
+
+		if let webServer {
+			Task { await self.webServer?.stop() }
+		}
+
+		let webServer = WebServer(directory: url)
+		self.webServer = webServer
+		Task { await webServer.start() }
 	}
 }
 
