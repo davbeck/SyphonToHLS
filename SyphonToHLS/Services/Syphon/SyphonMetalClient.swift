@@ -3,14 +3,15 @@ import Combine
 import CoreImage
 import CoreMedia
 import Metal
-import Syphon
+@preconcurrency import Syphon
 
-class SyphonCoreImageClient: Syphon.SyphonMetalClient {
-	struct Frame {
+final class SyphonCoreImageClient: Sendable {
+	struct Frame: @unchecked Sendable {
 		var time: CMTime
 		var image: CIImage
 	}
 
+	private let metalClient: SyphonMetalClient
 	let clock = CMClock.hostTimeClock
 	let frames: SharedStream<Frame>
 
@@ -22,7 +23,7 @@ class SyphonCoreImageClient: Syphon.SyphonMetalClient {
 		let (stream, continuation) = AsyncStream.makeStream(of: Frame.self)
 		self.frames = stream.share()
 
-		super.init(
+		self.metalClient = SyphonMetalClient(
 			serverDescription: serverDescription.description,
 			device: device,
 			options: options,
@@ -39,49 +40,5 @@ class SyphonCoreImageClient: Syphon.SyphonMetalClient {
 				continuation.yield(Frame(time: time, image: image))
 			}
 		)
-	}
-}
-
-final class SharedStream<Element>: AsyncSequence, @unchecked Sendable {
-	private let lock = NSRecursiveLock()
-	private var continuations: [AsyncStream<Element>.Continuation] = []
-
-	init<Sequence: AsyncSequence>(_ upstream: Sequence) where Sequence.Element == Element {
-		Task {
-			do {
-				for try await element in upstream {
-					let continuations = self.lock.withLock { self.continuations }
-
-					for continuation in continuations {
-						continuation.yield(element)
-					}
-				}
-
-				let continuations = self.lock.withLock { self.continuations }
-				for continuation in continuations {
-					continuation.finish()
-				}
-			} catch {
-				let continuations = self.lock.withLock { self.continuations }
-				for continuation in continuations {
-					continuation.finish()
-				}
-			}
-		}
-	}
-
-	func makeAsyncIterator() -> AsyncStream<Element>.AsyncIterator {
-		let (stream, continuation) = AsyncStream.makeStream(of: Element.self)
-		lock.withLock {
-			continuations.append(continuation)
-		}
-
-		return stream.makeAsyncIterator()
-	}
-}
-
-extension AsyncSequence {
-	func share() -> SharedStream<Element> {
-		SharedStream(self)
 	}
 }

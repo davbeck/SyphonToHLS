@@ -19,7 +19,7 @@ final class ProfileSession {
 	let device = MTLCreateSystemDefaultDevice()!
 
 	let syphonService = SyphonService()
-	let audioSourceService = AudioSourceService.shared
+	let audioSourceService = AudioSourceService()
 	let audioOutputService = AudioOutputService.shared
 	let captureSession = AVCaptureSession()
 	let previewOutput = AVCaptureAudioPreviewOutput()
@@ -78,7 +78,8 @@ final class ProfileSession {
 		}
 	}
 
-	nonisolated
+	static let liveValue = ProfileSession()
+
 	init() {}
 
 	func setup() async {
@@ -301,23 +302,11 @@ final class ProfileSession {
 		guard let url else { return }
 
 		if let webServer {
-			Task { await self.webServer?.stop() }
+			Task { await webServer.stop() }
 		}
 
 		let webServer = WebServer(directory: url)
 		self.webServer = webServer
 		Task { await webServer.start() }
-	}
-}
-
-extension ProfileSession: DependencyKey {
-	nonisolated
-	static let liveValue = ProfileSession()
-}
-
-extension DependencyValues {
-	var profileSession: ProfileSession {
-		get { self[ProfileSession.self] }
-		set { self[ProfileSession.self] = newValue }
 	}
 }

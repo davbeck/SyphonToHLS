@@ -1,12 +1,11 @@
 import AVFoundation
 import Combine
 import Observation
+import Dependencies
 
 @Observable
 @MainActor
 final class AudioSourceService {
-	static let shared = AudioSourceService()
-
 	let discoverySession: AVCaptureDevice.DiscoverySession
 
 	var devices: [AVCaptureDevice] = []

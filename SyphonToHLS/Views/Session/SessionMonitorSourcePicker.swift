@@ -4,7 +4,7 @@ import SimplyCoreAudio
 import SwiftUI
 
 struct SessionMonitorSourcePicker: View {
-	@Dependency(\.profileSession) private var session
+	private let session = ProfileSession.liveValue
 
 	var body: some View {
 		Picker("Audio Monitor", selection: Bindable(session).monitorDeviceUID) {

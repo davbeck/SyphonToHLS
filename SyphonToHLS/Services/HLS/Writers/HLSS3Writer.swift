@@ -98,7 +98,7 @@ actor HLSS3Writer: HLSWriter {
 	}
 }
 
-final class S3Uploader {
+final class S3Uploader: Sendable {
 	let config: Config.AWS
 
 	init(_ config: Config.AWS) {

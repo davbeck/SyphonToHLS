@@ -2,7 +2,7 @@ import Dependencies
 import SwiftUI
 
 struct SessionVideoSourcePicker: View {
-	@Dependency(\.profileSession) private var session
+	private let session = ProfileSession.liveValue
 
 	var body: some View {
 		Picker("Video Source", selection: Bindable(session).syphonServerID) {

@@ -5,7 +5,7 @@ import SwiftUI
 
 struct ContentMenuView: View {
 	@Dependency(\.performanceTracker) private var performanceTracker
-	@Dependency(\.profileSession) private var session
+	private let session = ProfileSession.liveValue
 
 	var body: some View {
 		VStack {

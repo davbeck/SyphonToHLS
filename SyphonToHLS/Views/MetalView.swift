@@ -38,6 +38,7 @@ struct MetalView: NSViewRepresentable {
 		view.isPaused = image == nil
 	}
 
+	@MainActor
 	class Coordinator: NSObject, MTKViewDelegate {
 		var parent: MetalView {
 			didSet {

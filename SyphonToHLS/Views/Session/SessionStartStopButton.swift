@@ -1,14 +1,14 @@
-import SwiftUI
 import Dependencies
+import SwiftUI
 
 struct SessionStartStopButton: View {
-	@Dependency(\.profileSession) private var profileSession
+	private let session = ProfileSession.liveValue
 
 	var body: some View {
 		Button {
-			profileSession.isRunning.toggle()
+			session.isRunning.toggle()
 		} label: {
-			if profileSession.isRunning {
+			if session.isRunning {
 				Text("Stop")
 			} else {
 				Text("Start")

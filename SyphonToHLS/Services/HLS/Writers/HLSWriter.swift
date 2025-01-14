@@ -8,7 +8,7 @@ protocol HLSWriter: Sendable {
 }
 
 final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
-	@Dependency(\.performanceTracker) private var performanceTracker
+	let performanceTracker: PerformanceTracker
 
 	private let logger = Logger(category: "HLSWriterDelegate")
 
@@ -19,6 +19,8 @@ final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
 	let stream: Stream
 
 	init(start: CMTime, segmentInterval: CMTime, writers: [HLSWriter], stream: Stream) {
+		self.performanceTracker = Dependency(\.performanceTracker).wrappedValue
+		
 		self.start = start
 		self.segmentInterval = segmentInterval
 		self.outputs = writers.map { ($0, .init()) }

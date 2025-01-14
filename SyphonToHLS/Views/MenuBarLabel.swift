@@ -3,7 +3,7 @@ import IssueReporting
 import SwiftUI
 
 struct MenuBarLabel: View {
-	@Dependency(\.profileSession) private var session
+	private let session = ProfileSession.liveValue
 
 	@State private var animationValue: Double = 0
 

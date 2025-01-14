@@ -5,7 +5,7 @@ import SwiftUI
 @main
 struct SyphonToHLSApp: App {
 	@Dependency(\.configManager) private var configManager
-	@Dependency(\.profileSession) private var session
+	private let session = ProfileSession.liveValue
 
 	init() {
 		if !isTesting {

@@ -1,5 +1,5 @@
 import Foundation
-import NWHTTPServer
+@preconcurrency import NWHTTPServer
 import OSLog
 import UniformTypeIdentifiers
 

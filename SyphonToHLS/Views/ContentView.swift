@@ -4,7 +4,7 @@ import Syphon
 import Dependencies
 
 struct ContentView: View {
-	@Dependency(\.profileSession) private var session
+	private let session = ProfileSession.liveValue
 
 	var body: some View {
 		VStack {

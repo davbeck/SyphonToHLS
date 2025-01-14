@@ -1,9 +1,9 @@
 import AVFoundation
-import SwiftUI
 import Dependencies
+import SwiftUI
 
 struct SessionAudioSourcePicker: View {
-	@Dependency(\.profileSession) private var session
+	private let session = ProfileSession.liveValue
 
 	var body: some View {
 		Picker("Audio Source", selection: Bindable(session).audioDevice) {
