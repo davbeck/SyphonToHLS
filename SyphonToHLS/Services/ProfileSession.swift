@@ -192,8 +192,8 @@ final class ProfileSession {
 
 	private var videoTask: Task<Void, Never>?
 	private func trackVideoRecording() {
-		withObservationTracking { [weak self, logger, qualityLevels] in
-			guard let self else { return }
+		withObservationTracking { [logger, qualityLevels] in
+			let preferredOutputSegmentInterval = configManager.config.encoder.preferredOutputSegmentInterval
 
 			videoTask?.cancel()
 
@@ -210,6 +210,7 @@ final class ProfileSession {
 						group.addTask {
 							while !Task.isCancelled {
 								let videoService = HLSVideoService(
+									preferredOutputSegmentInterval: preferredOutputSegmentInterval,
 									url: url,
 									syphonClient: client,
 									uploader: uploader,
@@ -230,6 +231,8 @@ final class ProfileSession {
 					await group.waitForAll()
 				}
 			}
+		} onChanged: { [weak self] in
+			self?.trackVideoRecording()
 		}
 	}
 
@@ -237,9 +240,12 @@ final class ProfileSession {
 	private func trackAudioRecording() {
 		withObservationTracking {
 			if self.isRunning, let audioDevice, let url {
+				let preferredOutputSegmentInterval = configManager.config.encoder.preferredOutputSegmentInterval
+				
 				audioService?.stop()
 
 				audioService = HLSAudioService(
+					preferredOutputSegmentInterval: preferredOutputSegmentInterval,
 					url: url,
 					audioDevice: audioDevice,
 					captureSession: captureSession,

@@ -21,7 +21,13 @@ actor HLSVideoService {
 
 	let quality: VideoQualityLevel
 
-	init(url: URL, syphonClient: SyphonCoreImageClient, uploader: S3Uploader, quality: VideoQualityLevel) {
+	init(
+		preferredOutputSegmentInterval: Double,
+		url: URL,
+		syphonClient: SyphonCoreImageClient,
+		uploader: S3Uploader,
+		quality: VideoQualityLevel
+	) {
 		self.quality = quality
 
 		self.writers = [
@@ -31,7 +37,7 @@ actor HLSVideoService {
 
 		self.syphonClient = syphonClient
 
-		self.assetWriter = AVAssetWriter.hlsWriter()
+		self.assetWriter = AVAssetWriter.hlsWriter(preferredOutputSegmentInterval: preferredOutputSegmentInterval)
 
 		let videoInput = AVAssetWriterInput(
 			mediaType: .video,

@@ -58,7 +58,8 @@ actor HLSS3Writer: HLSWriter {
 						data: segment.data,
 						key: "\(stream.header)/\(record.name)",
 						type: .segmentedVideo,
-						shouldEnableCaching: false
+						shouldEnableCaching: false,
+						timeoutInterval: segment.duration.seconds
 					)
 				}
 
@@ -84,7 +85,8 @@ actor HLSS3Writer: HLSWriter {
 					data: Data(records.suffix(10).hlsPlaylist(prefix: nil).utf8),
 					key: "\(stream.header)/live.m3u8",
 					type: .m3uPlaylist,
-					shouldEnableCaching: false
+					shouldEnableCaching: false,
+					timeoutInterval: 1
 				)
 
 				let end = Date.now
@@ -99,6 +101,8 @@ actor HLSS3Writer: HLSWriter {
 }
 
 final class S3Uploader: Sendable {
+	private let _urlSession = Dependency(\.urlSession)
+
 	let config: Config.AWS
 
 	init(_ config: Config.AWS) {
@@ -115,7 +119,8 @@ final class S3Uploader: Sendable {
 		data: Data,
 		key: String,
 		type: UTType,
-		shouldEnableCaching: Bool
+		shouldEnableCaching: Bool,
+		timeoutInterval: TimeInterval = 60
 	) async throws {
 		let urlString = "https://\(config.bucket).s3.\(config.region).amazonaws.com/\(key)"
 		guard let url = URL(string: urlString) else {
@@ -146,8 +151,9 @@ final class S3Uploader: Sendable {
 		for (name, value) in signedHeaders {
 			urlRequest.addValue(value, forHTTPHeaderField: name)
 		}
+		urlRequest.timeoutInterval = timeoutInterval
 
-		let (outputData, response) = try await URLSession.s3.upload(for: urlRequest, from: data)
+		let (outputData, response) = try await _urlSession.wrappedValue.upload(for: urlRequest, from: data)
 
 		guard let response = response as? HTTPURLResponse else { throw Error.invalidURLResponse(response) }
 		guard response.statusCode == 200 else {
@@ -157,15 +163,4 @@ final class S3Uploader: Sendable {
 			)
 		}
 	}
-}
-
-private extension URLSession {
-	static let s3: URLSession = {
-		let configuration = URLSessionConfiguration.default
-		configuration.timeoutIntervalForRequest = segmentInterval
-		configuration.timeoutIntervalForResource = segmentInterval * 10
-		let session = URLSession(configuration: configuration)
-
-		return session
-	}()
 }

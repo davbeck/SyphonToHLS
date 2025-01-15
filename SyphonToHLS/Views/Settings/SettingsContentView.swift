@@ -1,21 +1,23 @@
-import SwiftUI
 import Dependencies
+import SwiftUI
 
 struct SettingsContentView: View {
 	@Dependency(\.configManager) private var configManager
-	
+
 	var body: some View {
-		@Bindable var configManager = self.configManager
-		
-		Form {
-			Section("AWS Credentials") {
-				TextField("Region", text: $configManager.config.aws.region)
-				TextField("S3 Bucket", text: $configManager.config.aws.bucket)
-				TextField("Client Key", text: $configManager.config.aws.clientKey)
-				TextField("Client Secret", text: $configManager.config.aws.clientSecret)
+		TabView {
+			Tab {
+				EncoderSettingsTab()
+			} label: {
+				Text("Encoder")
+			}
+			
+			Tab {
+				AWSSettingsTab()
+			} label: {
+				Text("AWS")
 			}
 		}
-		.padding()
 		.frame(width: 500)
 	}
 }

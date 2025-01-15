@@ -21,7 +21,7 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 
 	private let queue = DispatchQueue(label: "HLSAudioService")
 
-	private var assetWriter = AVAssetWriter.hlsWriter()
+	private var assetWriter: AVAssetWriter
 	private let captureAudioOutput = AVCaptureAudioDataOutput()
 	private var audioInput: AVAssetWriterInput = .hlsInput()
 	private let captureSession: AVCaptureSession
@@ -30,7 +30,15 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 
 	private var isRunning: Bool = false
 
-	init(url: URL, audioDevice: AVCaptureDevice, captureSession: AVCaptureSession, uploader: S3Uploader) {
+	init(
+		preferredOutputSegmentInterval: Double,
+		url: URL,
+		audioDevice: AVCaptureDevice,
+		captureSession: AVCaptureSession,
+		uploader: S3Uploader
+	) {
+		self.assetWriter = AVAssetWriter.hlsWriter(preferredOutputSegmentInterval: preferredOutputSegmentInterval)
+
 		self.captureSession = captureSession
 
 		self.writers = [
@@ -70,7 +78,7 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 		audioInput.markAsFinished()
 		if assetWriter.status == .writing {
 			assetWriter.endSession(atSourceTime: clock.time)
-		 assetWriter.cancelWriting()
+			assetWriter.cancelWriting()
 		}
 	}
 
@@ -97,7 +105,9 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 
 		cleanupAssetWriter()
 
-		self.assetWriter = AVAssetWriter.hlsWriter()
+		self.assetWriter = AVAssetWriter.hlsWriter(
+			preferredOutputSegmentInterval: assetWriter.preferredOutputSegmentInterval.seconds
+		)
 		self.audioInput = AVAssetWriterInput.hlsInput()
 
 		setupAssetWriter()

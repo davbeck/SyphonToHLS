@@ -73,7 +73,9 @@ final class ScheduleManager {
 				.min()
 		else {
 			logger.error("no next")
-			self.isActive = false
+			if isActive {
+				self.isActive = false
+			}
 			return .seconds(60)
 		}
 		let next = DateInterval(start: start, duration: schedule.duration.seconds)
@@ -83,11 +85,15 @@ final class ScheduleManager {
 		let startDelay = now.timeIntervalUntil(next.start)
 		logger.info("delay to active: \(startDelay)")
 		if startDelay > 0 {
-			self.isActive = false
+			if isActive {
+				self.isActive = false
+			}
 
 			return .seconds(startDelay)
 		} else {
-			self.isActive = true
+			if !isActive {
+				self.isActive = true
+			}
 
 			let delay = now.timeIntervalUntil(next.end)
 			logger.info("delay to inactive: \(delay)")

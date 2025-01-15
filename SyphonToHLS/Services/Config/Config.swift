@@ -15,6 +15,9 @@ struct Config {
 
 	@Default(AWS())
 	var aws: AWS
+
+	@Default(EncoderProperties())
+	var encoder: EncoderProperties
 }
 
 extension Config {
@@ -37,5 +40,18 @@ extension Config {
 		var bucket: String = ""
 		var clientKey: String = ""
 		var clientSecret: String = ""
+	}
+}
+
+extension Config {
+	@Codable
+	@MemberInit
+	struct EncoderProperties {
+		@Default(6)
+		var preferredOutputSegmentInterval: Double
+
+		init() {
+			self.init(preferredOutputSegmentInterval: 6)
+		}
 	}
 }

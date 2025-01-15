@@ -71,6 +71,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		1108E53C2D37261900A74135 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Views/Settings/AWSSettingsTab.swift,
+			);
+			target = 1127AC2B2C7636FA004C5D8C /* SyphonToHLSTests */;
+		};
 		1114770A2C7F764500C4E395 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -81,7 +88,7 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		1127AC1D2C7636F8004C5D8C /* SyphonToHLS */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (1114770A2C7F764500C4E395 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLS; sourceTree = "<group>"; };
+		1127AC1D2C7636F8004C5D8C /* SyphonToHLS */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (1114770A2C7F764500C4E395 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 1108E53C2D37261900A74135 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLS; sourceTree = "<group>"; };
 		1127AC2F2C7636FA004C5D8C /* SyphonToHLSTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLSTests; sourceTree = "<group>"; };
 		1127AC392C7636FA004C5D8C /* SyphonToHLSUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SyphonToHLSUITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
