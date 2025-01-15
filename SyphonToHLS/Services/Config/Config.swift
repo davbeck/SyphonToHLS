@@ -50,6 +50,9 @@ extension Config {
 		@Default(6)
 		var preferredOutputSegmentInterval: Double
 
+		@Default(Set(VideoQualityLevel.allCases))
+		var qualityLevels: Set<VideoQualityLevel>
+
 		init() {
 			self.init(preferredOutputSegmentInterval: 6)
 		}

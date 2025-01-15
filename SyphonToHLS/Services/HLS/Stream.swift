@@ -1,6 +1,6 @@
 import CoreGraphics
 
-enum VideoQualityLevel: CaseIterable {
+enum VideoQualityLevel: String, CaseIterable, Codable {
 	case high // 1080 7.5mbps
 	case medium // 720 3.8mbps
 	case low // 360 350kbps
@@ -17,14 +17,7 @@ enum VideoQualityLevel: CaseIterable {
 	}
 
 	var name: String {
-		switch self {
-		case .high:
-			"high"
-		case .medium:
-			"medium"
-		case .low:
-			"low"
-		}
+		rawValue
 	}
 
 	var bitrate: Int {

@@ -16,11 +16,19 @@ struct EncoderSettingsTab: View {
 				) {
 					Text("Segment length")
 				}
-				
+
 				Text(Duration.seconds(configManager.config.encoder.preferredOutputSegmentInterval).formatted(.units(allowed: [.seconds], zeroValueUnits: .show(length: 2))))
 					.font(.callout)
 					.monospacedDigit()
 					.foregroundStyle(.secondary)
+			}
+			
+			LabeledContent("Quality levels") {
+				VStack(alignment: .leading) {
+					ForEach(VideoQualityLevel.allCases, id: \.self) { level in
+						Toggle(level.name, isOn: $configManager.config.encoder.qualityLevels[contains: level])
+					}
+				}
 			}
 		}
 		.padding()

@@ -30,7 +30,9 @@ final class ProfileSession {
 
 	private let logger = Logger(category: "ProfileSession")
 
-	let qualityLevels = VideoQualityLevel.allCases
+	var qualityLevels: Set<VideoQualityLevel> {
+		configManager.config.encoder.qualityLevels
+	}
 
 	var syphonServerID: ServerDescription.ID? {
 		get {
@@ -45,7 +47,7 @@ final class ProfileSession {
 		guard let syphonServerID else { return nil }
 		return syphonService.servers.first(where: { $0.id == syphonServerID })
 	}
-	
+
 	@ObservationIgnored
 	private weak var _syphonClient: SyphonCoreImageClient?
 	var syphonClient: SyphonCoreImageClient? {
@@ -192,7 +194,7 @@ final class ProfileSession {
 
 	private var videoTask: Task<Void, Never>?
 	private func trackVideoRecording() {
-		withObservationTracking { [logger, qualityLevels] in
+		withObservationTracking { [logger] in
 			let preferredOutputSegmentInterval = configManager.config.encoder.preferredOutputSegmentInterval
 
 			videoTask?.cancel()
@@ -203,6 +205,8 @@ final class ProfileSession {
 			else { return }
 
 			let uploader = S3Uploader(configManager.config.aws)
+
+			let qualityLevels = self.qualityLevels
 
 			videoTask = Task {
 				await withTaskGroup(of: Void.self) { group in
@@ -241,7 +245,7 @@ final class ProfileSession {
 		withObservationTracking {
 			if self.isRunning, let audioDevice, let url {
 				let preferredOutputSegmentInterval = configManager.config.encoder.preferredOutputSegmentInterval
-				
+
 				audioService?.stop()
 
 				audioService = HLSAudioService(
