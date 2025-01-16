@@ -34,33 +34,56 @@ final class ProfileSession {
 		configManager.config.encoder.qualityLevels
 	}
 
-	var syphonServerID: ServerDescription.ID? {
-		get {
-			configManager.config.syphonServerID
-		}
-		set {
-			configManager.config.syphonServerID = newValue
-		}
-	}
-
 	var syphonServer: ServerDescription? {
-		guard let syphonServerID else { return nil }
+		guard let syphonServerID = configManager.config.videoSource?.syphonID else { return nil }
 		return syphonService.servers.first(where: { $0.id == syphonServerID })
 	}
 
+	private final class FrameSourceManager: FrameSource {
+		let videoSource: VideoSource
+		let frameSource: any FrameSource
+
+		init(videoSource: VideoSource, frameSource: any FrameSource) {
+			self.videoSource = videoSource
+			self.frameSource = frameSource
+		}
+
+		var frames: any AsyncSequence<Frame, Never> {
+			frameSource.frames
+		}
+	}
+
 	@ObservationIgnored
-	private weak var _syphonClient: SyphonCoreImageClient?
-	var syphonClient: SyphonCoreImageClient? {
-		if let _syphonClient, _syphonClient.serverDescription.id == self.syphonServerID {
-			return _syphonClient
-		} else if let syphonServer {
-			let syphonClient = SyphonCoreImageClient(syphonServer, device: self.device)
+	private weak var _frameSource: FrameSourceManager?
+	var frameSource: (any FrameSource)? {
+		guard let videoSource = configManager.config.videoSource else { return nil }
 
-			_syphonClient = syphonClient
+		if let manager = _frameSource, manager.videoSource == videoSource {
+			return manager.frameSource
+		}
 
-			return syphonClient
-		} else {
-			return nil
+		switch videoSource {
+		case let .syphon(id: id):
+			if let syphonServer = syphonService.servers.first(where: { $0.id == id }) {
+				let syphonClient = SyphonCoreImageClient(syphonServer, device: self.device)
+
+				let frameSource = FrameSourceManager(videoSource: videoSource, frameSource: syphonClient)
+
+				_frameSource = frameSource
+				return frameSource
+			} else {
+				return nil
+			}
+		case let .ndi(name: name):
+			let player = NDIPlayer(name: name)
+
+			let frameSource = FrameSourceManager(
+				videoSource: videoSource,
+				frameSource: NDIFrameSource(player: player)
+			)
+
+			_frameSource = frameSource
+			return frameSource
 		}
 	}
 
@@ -201,7 +224,7 @@ final class ProfileSession {
 
 			guard
 				let url,
-				let client = self.syphonClient
+				let frameSource = self.frameSource
 			else { return }
 
 			let uploader = S3Uploader(configManager.config.aws)
@@ -216,7 +239,7 @@ final class ProfileSession {
 								let videoService = HLSVideoService(
 									preferredOutputSegmentInterval: preferredOutputSegmentInterval,
 									url: url,
-									syphonClient: client,
+									frameSource: frameSource,
 									uploader: uploader,
 									quality: quality
 								)

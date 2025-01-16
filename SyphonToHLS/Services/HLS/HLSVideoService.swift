@@ -5,7 +5,7 @@ import Queue
 import VideoToolbox
 
 actor HLSVideoService {
-	let syphonClient: SyphonCoreImageClient
+	let frameSource: any FrameSource
 
 	var writerDelegate: WriterDelegate?
 	private let writers: [HLSWriter]
@@ -24,7 +24,7 @@ actor HLSVideoService {
 	init(
 		preferredOutputSegmentInterval: Double,
 		url: URL,
-		syphonClient: SyphonCoreImageClient,
+		frameSource: any FrameSource,
 		uploader: S3Uploader,
 		quality: VideoQualityLevel
 	) {
@@ -35,7 +35,7 @@ actor HLSVideoService {
 			HLSS3Writer(uploader: uploader, stream: .video(quality)),
 		]
 
-		self.syphonClient = syphonClient
+		self.frameSource = frameSource
 
 		self.assetWriter = AVAssetWriter.hlsWriter(preferredOutputSegmentInterval: preferredOutputSegmentInterval)
 
@@ -96,7 +96,7 @@ actor HLSVideoService {
 
 		var lastPresentationTime: CMTime?
 
-		for await frame in syphonClient.frames {
+		for await frame in frameSource.frames {
 			let presentationTime = CMTimeConvertScale(frame.time, timescale: 30, method: .default)
 			guard presentationTime != lastPresentationTime else {
 //								logger.warning("next frame too soon, skipping")
@@ -164,3 +164,5 @@ actor HLSVideoService {
 		}
 	}
 }
+
+

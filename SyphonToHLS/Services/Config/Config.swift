@@ -1,13 +1,37 @@
 import Foundation
 import MetaCodable
 
+enum VideoSource: Codable, Hashable {
+	case syphon(id: ServerDescription.ID)
+	case ndi(name: String)
+
+	var ndiName: String? {
+		switch self {
+		case let .ndi(name: name):
+			name
+		case .syphon:
+			nil
+		}
+	}
+
+	var syphonID: ServerDescription.ID? {
+		switch self {
+		case let .syphon(id: id):
+			id
+		case .ndi:
+			nil
+		}
+	}
+}
+
 @Codable
 @MemberInit
 struct Config {
 	@Default(Schedule())
 	var schedule: Schedule
 
-	var syphonServerID: ServerDescription.ID?
+	@Default(VideoSource?.none)
+	var videoSource: VideoSource?
 	@Default("")
 	var audioDeviceID: String
 	@Default("")

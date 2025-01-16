@@ -10,6 +10,8 @@
 		1108E52C2D36182300A74135 /* AWSSigner in Frameworks */ = {isa = PBXBuildFile; productRef = 1108E52B2D36182300A74135 /* AWSSigner */; };
 		1108E5312D36AF1D00A74135 /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; };
 		1108E5322D36AF1D00A74135 /* Syphon.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		1108E58A2D37658D00A74135 /* libndi.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1108E5892D37658C00A74135 /* libndi.dylib */; };
+		1108E5992D376B8900A74135 /* libndi.dylib in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1108E5892D37658C00A74135 /* libndi.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		110A34902D35C9D900524032 /* NWHTTPServer in Frameworks */ = {isa = PBXBuildFile; productRef = 110A348F2D35C9D900524032 /* NWHTTPServer */; };
 		111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 111477002C7E90C600C4E395 /* KeychainSwift */; };
 		1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; };
@@ -56,6 +58,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				1108E5992D376B8900A74135 /* libndi.dylib in Embed Frameworks */,
 				1127AC512C76375D004C5D8C /* Syphon.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -64,6 +67,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1108E5892D37658C00A74135 /* libndi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libndi.dylib; path = ../../../../../usr/local/lib/libndi.dylib; sourceTree = "<group>"; };
 		1127AC1B2C7636F8004C5D8C /* SyphonToHLS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SyphonToHLS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1127AC2C2C7636FA004C5D8C /* SyphonToHLSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SyphonToHLSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1127AC362C7636FA004C5D8C /* SyphonToHLSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SyphonToHLSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -106,6 +110,7 @@
 				11C0250E2D0BE0C6007457C8 /* SFSafeSymbols in Frameworks */,
 				11E07C992D29FE320095F157 /* MetaCodable in Frameworks */,
 				11C0250A2D0BC4CA007457C8 /* Dependencies in Frameworks */,
+				1108E58A2D37658D00A74135 /* libndi.dylib in Frameworks */,
 				11D6F8D82D06B08A00D3A159 /* Queue in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -153,6 +158,7 @@
 		11D52B862CA0EBAF00EBFB73 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				1108E5892D37658C00A74135 /* libndi.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -493,6 +499,7 @@
 					"$(PROJECT_DIR)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "'/Library/NDI SDK for Apple/include'";
 				INFOPLIST_FILE = SyphonToHLS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SyphonToHLS;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
@@ -502,11 +509,13 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = co.davidbeck.SyphonToHLS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "SyphonToHLS/SyphonToHLS-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -530,6 +539,7 @@
 					"$(PROJECT_DIR)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "'/Library/NDI SDK for Apple/include'";
 				INFOPLIST_FILE = SyphonToHLS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SyphonToHLS;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
@@ -539,11 +549,13 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = co.davidbeck.SyphonToHLS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "SyphonToHLS/SyphonToHLS-Bridging-Header.h";
 			};
 			name = Release;
 		};

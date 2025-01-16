@@ -1,9 +1,11 @@
 import AVFoundation
+import Dependencies
 import SwiftUI
 import Syphon
-import Dependencies
 
 struct ContentView: View {
+	@Dependency(\.configManager) private var configManager
+
 	private let session = ProfileSession.liveValue
 
 	var body: some View {
@@ -11,11 +13,13 @@ struct ContentView: View {
 			SessionVideoSourcePicker()
 
 			SessionAudioSourcePicker()
-			
+
 			SessionMonitorSourcePicker()
 
-			if let syphonClient = session.syphonClient {
-				SyphonPreviewView(client: syphonClient)
+			if let frameSource = session.frameSource {
+				FrameSourcePreviewView(frameSource: frameSource)
+			} else {
+				Rectangle().fill(Color.black)
 			}
 
 			HStack {
