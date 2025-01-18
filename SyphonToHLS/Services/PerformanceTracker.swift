@@ -55,7 +55,7 @@ class PerformanceTracker {
 		var records = stats[key] ?? []
 
 		records.append(performance)
-		while records.count > 500 {
+		while records.count > 50 {
 			records.removeFirst()
 		}
 

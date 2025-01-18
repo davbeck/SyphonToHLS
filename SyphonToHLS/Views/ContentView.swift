@@ -21,6 +21,8 @@ struct ContentView: View {
 			} else {
 				Rectangle().fill(Color.black)
 			}
+			
+			PerformanceView()
 
 			HStack {
 				Spacer()
