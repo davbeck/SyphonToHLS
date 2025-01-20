@@ -1,4 +1,5 @@
 import AVFoundation
+import Combine
 import CoreImage
 import Dependencies
 import Metal
@@ -75,7 +76,7 @@ final class ProfileSession {
 				return nil
 			}
 		case let .ndi(name: name):
-			let player = NDIPlayer(name: name)
+			let player = NDIPlayer.player(for: name)
 
 			let frameSource = FrameSourceManager(
 				videoSource: videoSource,
@@ -89,12 +90,18 @@ final class ProfileSession {
 
 	var audioDevice: AVCaptureDevice? {
 		get {
+			guard let audioDeviceID = configManager.config.audioSource?.audioDeviceID else { return nil }
+
 			// by looking in audioSourceService, we will trigger an observation update if something becomes available
-			audioSourceService.devices.first(where: { $0.uniqueID == configManager.config.audioDeviceID }) ??
-				AVCaptureDevice(uniqueID: configManager.config.audioDeviceID)
+			return audioSourceService.devices.first(where: { $0.uniqueID == audioDeviceID }) ??
+				AVCaptureDevice(uniqueID: audioDeviceID)
 		}
 		set {
-			configManager.config.audioDeviceID = newValue?.uniqueID ?? ""
+			if let newValue {
+				configManager.config.audioSource = .audioDevice(id: newValue.uniqueID)
+			} else {
+				configManager.config.audioSource = nil
+			}
 		}
 	}
 
@@ -263,25 +270,54 @@ final class ProfileSession {
 		}
 	}
 
-	private var audioService: HLSAudioService?
+	private var audioTask: AnyCancellable?
 	private func trackAudioRecording() {
 		withObservationTracking {
-			if self.isRunning, let audioDevice, let url {
-				let preferredOutputSegmentInterval = configManager.config.encoder.preferredOutputSegmentInterval
+			guard self.isRunning, let url else {
+				audioTask = nil
+				return
+			}
+			
+			let preferredOutputSegmentInterval = configManager.config.encoder.preferredOutputSegmentInterval
+			let uploader = S3Uploader(configManager.config.aws)
 
-				audioService?.stop()
+			switch configManager.config.audioSource {
+			case let .audioDevice(id: id):
+				guard let audioDevice = self.audioDevice else {
+					audioTask = nil
+					break
+				}
 
-				audioService = HLSAudioService(
+				let audioService = HLSAudioService(
 					preferredOutputSegmentInterval: preferredOutputSegmentInterval,
 					url: url,
 					audioDevice: audioDevice,
 					captureSession: captureSession,
-					uploader: S3Uploader(configManager.config.aws)
+					uploader: uploader
 				)
-				audioService?.start()
-			} else {
-				audioService?.stop()
-				audioService = nil
+				audioService.start()
+
+				audioTask = AnyCancellable {
+					audioService.stop()
+				}
+			case let .ndi(name: name):
+				let player = NDIPlayer.player(for: name)
+				
+				let service = HLSNDIAudioService(
+					preferredOutputSegmentInterval: preferredOutputSegmentInterval,
+					player: player,
+					url: url,
+					uploader: uploader
+				)
+				
+				let task = Task {
+					await service.start()
+				}
+				audioTask = AnyCancellable {
+					task.cancel()
+				}
+			case .none:
+				audioTask = nil
 			}
 		} onChanged: { [weak self] in
 			self?.trackAudioRecording()

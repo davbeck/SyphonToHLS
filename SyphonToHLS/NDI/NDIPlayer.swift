@@ -1,6 +1,21 @@
+import ConcurrencyExtras
 import Foundation
 
 actor NDIPlayer {
+	private static var playerPool: LockIsolated<[String: Weak<NDIPlayer>]> = .init([:])
+
+	static func player(for name: String) -> NDIPlayer {
+		playerPool.withValue { pool in
+			if let player = pool[name]?.value {
+				return player
+			} else {
+				let player = NDIPlayer(name: name)
+				pool[name] = .init(value: player)
+				return player
+			}
+		}
+	}
+
 	private var receiver: NDIReceiver?
 
 	let sourceName: String
@@ -45,6 +60,10 @@ actor NDIPlayer {
 			case let .video(frame):
 				lastVideoFrame = frame
 				for (_, continuation) in videoFramesContinuations {
+					continuation.yield(frame)
+				}
+			case let .audio(frame):
+				for (_, continuation) in audioFramesContinuations {
 					continuation.yield(frame)
 				}
 			default:
@@ -110,6 +129,54 @@ actor NDIPlayer {
 
 		Task {
 			await self.registerVideoContinuation(continuation)
+		}
+
+		return stream
+	}
+
+	// MARK: - Audio
+
+	typealias AudioFrameStream = AsyncStream<NDIAudioFrame>
+
+	private var audioFramesTask: Task<Void, Never>? {
+		didSet {
+			oldValue?.cancel()
+		}
+	}
+
+	private var audioFramesContinuations: [UUID: AudioFrameStream.Continuation] = [:] {
+		didSet {
+			if audioFramesContinuations.isEmpty {
+				audioFramesTask = nil
+			} else if audioFramesTask == nil || audioFramesTask?.isCancelled == true {
+				audioFramesTask = Task {
+					await self.receive(types: [.audio])
+				}
+			}
+		}
+	}
+
+	private func registerAudioContinuation(_ continuation: AudioFrameStream.Continuation) {
+		let id = UUID()
+		audioFramesContinuations[id] = continuation
+
+		continuation.onTermination = { reason in
+			Task {
+				await self.unregisterAudioContinuation(id)
+			}
+		}
+	}
+
+	private func unregisterAudioContinuation(_ id: UUID) {
+		self.audioFramesContinuations.removeValue(forKey: id)
+	}
+
+	nonisolated
+	var audioFrames: AudioFrameStream {
+		let (stream, continuation) = AudioFrameStream.makeStream(bufferingPolicy: .bufferingNewest(1))
+
+		Task {
+			await self.registerAudioContinuation(continuation)
 		}
 
 		return stream

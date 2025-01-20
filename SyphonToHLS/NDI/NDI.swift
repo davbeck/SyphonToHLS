@@ -19,4 +19,7 @@ actor NDI {
 		NDIlib_destroy()
 		logger.debug("NDIlib_destroy")
 	}
+
+	/// The units that time is represented in (100ns) per second
+	static let timescale: Int64 = 10_000_000
 }

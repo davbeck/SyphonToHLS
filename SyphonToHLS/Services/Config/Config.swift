@@ -5,20 +5,43 @@ enum VideoSource: Codable, Hashable {
 	case syphon(id: ServerDescription.ID)
 	case ndi(name: String)
 
-	var ndiName: String? {
-		switch self {
-		case let .ndi(name: name):
-			name
-		case .syphon:
-			nil
-		}
-	}
-
 	var syphonID: ServerDescription.ID? {
 		switch self {
 		case let .syphon(id: id):
 			id
-		case .ndi:
+		default:
+			nil
+		}
+	}
+
+	var ndiName: String? {
+		switch self {
+		case let .ndi(name: name):
+			name
+		default:
+			nil
+		}
+	}
+}
+
+enum AudioSource: Codable, Hashable {
+	case audioDevice(id: String)
+	case ndi(name: String)
+
+	var audioDeviceID: String? {
+		switch self {
+		case let .audioDevice(id: id):
+			id
+		default:
+			nil
+		}
+	}
+
+	var ndiName: String? {
+		switch self {
+		case let .ndi(name: name):
+			name
+		default:
 			nil
 		}
 	}
@@ -32,8 +55,8 @@ struct Config {
 
 	@Default(VideoSource?.none)
 	var videoSource: VideoSource?
-	@Default("")
-	var audioDeviceID: String
+	@Default(AudioSource?.none)
+	var audioSource: AudioSource?
 	@Default("")
 	var monitorDeviceID: String
 

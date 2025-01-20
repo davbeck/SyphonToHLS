@@ -23,8 +23,7 @@ final class NDIVideoFrame: @unchecked Sendable {
 	}
 
 	var timestamp: Date? {
-		guard ref.timestamp != NDIlib_recv_timestamp_undefined else { return nil }
-		return Date(timeIntervalSince1970: Double(ref.timestamp) / 10_000_000)
+		Date(ndiTimestamp: ref.timestamp)
 	}
 
 	var metadata: String? {

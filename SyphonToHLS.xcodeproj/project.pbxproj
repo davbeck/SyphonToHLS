@@ -286,6 +286,7 @@
 				11DC815F2D29FD4C004836A4 /* XCRemoteSwiftPackageReference "MetaCodable" */,
 				110A342A2D35C99600524032 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */,
 				110A34912D36021B00524032 /* XCRemoteSwiftPackageReference "aws-signer-v4" */,
+				117F3F002D3B093C00C45F07 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 			);
 			productRefGroup = 1127AC1C2C7636F8004C5D8C /* Products */;
 			projectDirPath = "";
@@ -719,6 +720,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.2.0;
+			};
+		};
+		117F3F002D3B093C00C45F07 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.3;
 			};
 		};
 		11C120712D0B3278003C05CA /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {

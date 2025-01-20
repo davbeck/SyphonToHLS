@@ -65,13 +65,13 @@ final class NDIReceiver: @unchecked Sendable {
 			timestamp: 0
 		)
 		var audio_frame: NDIlib_audio_frame_v3_t = .init(
-			sample_rate: 0,
-			no_channels: 0,
+			sample_rate: 48000,
+			no_channels: 2,
 			no_samples: 0,
-			timecode: 0,
+			timecode: NDIlib_send_timecode_synthesize,
 			FourCC: NDIlib_FourCC_audio_type_FLTP,
 			p_data: nil,
-			.init(),
+			.init(channel_stride_in_bytes: 0),
 			p_metadata: nil,
 			timestamp: 0
 		)
@@ -103,10 +103,9 @@ final class NDIReceiver: @unchecked Sendable {
 
 			return .video(videoFrame)
 		case NDIlib_frame_type_audio:
-//			logger.debug("Audio data received (\(audio_frame.no_samples) samples).")
-			NDIlib_recv_free_audio_v3(pNDI_recv, &audio_frame)
+			let audioFrame = NDIAudioFrame(audio_frame, receiver: self)
 
-			return .audio
+			return .audio(audioFrame)
 		case NDIlib_frame_type_metadata:
 			logger.debug("NDIlib_frame_type_metadata")
 			NDIlib_recv_free_metadata(pNDI_recv, &metadata_frame)
@@ -133,7 +132,7 @@ enum NDICaptureType: CaseIterable {
 enum NDIFrame {
 	case none
 	case video(NDIVideoFrame)
-	case audio
+	case audio(NDIAudioFrame)
 	case metadata
 	case statusChange
 	case unknown

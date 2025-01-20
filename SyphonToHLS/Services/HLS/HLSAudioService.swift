@@ -1,20 +1,6 @@
 import AVFoundation
 import OSLog
 
-extension AVAssetWriterInput {
-	static func hlsInput() -> AVAssetWriterInput {
-		let input = AVAssetWriterInput(mediaType: .audio, outputSettings: [
-			AVFormatIDKey: kAudioFormatMPEG4AAC,
-
-			AVSampleRateKey: 48000,
-			AVNumberOfChannelsKey: 1,
-			AVEncoderBitRateKey: 80 * 1024,
-		])
-		input.expectsMediaDataInRealTime = true
-		return input
-	}
-}
-
 final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate, @unchecked Sendable {
 	private let logger = Logger(category: "HLSAudioService")
 	private let clock = CMClock.hostTimeClock
@@ -23,7 +9,7 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 
 	private var assetWriter: AVAssetWriter
 	private let captureAudioOutput = AVCaptureAudioDataOutput()
-	private var audioInput: AVAssetWriterInput = .hlsInput()
+	private var audioInput: AVAssetWriterInput = .hlsAudioInput()
 	private let captureSession: AVCaptureSession
 	private let writers: [HLSWriter]
 	private var writerDelegate: WriterDelegate?
@@ -46,7 +32,7 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 			HLSS3Writer(uploader: uploader, stream: .audio),
 		]
 
-		let audioInput = AVAssetWriterInput.hlsInput()
+		let audioInput = AVAssetWriterInput.hlsAudioInput()
 		audioInput.expectsMediaDataInRealTime = true
 	}
 
@@ -89,7 +75,7 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 			captureSession.beginConfiguration()
 			captureAudioOutput.setSampleBufferDelegate(
 				self,
-				queue: DispatchQueue(label: "hls_audio")
+				queue: queue
 			)
 			captureSession.addOutput(captureAudioOutput)
 			captureSession.commitConfiguration()
@@ -108,7 +94,7 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 		self.assetWriter = AVAssetWriter.hlsWriter(
 			preferredOutputSegmentInterval: assetWriter.preferredOutputSegmentInterval.seconds
 		)
-		self.audioInput = AVAssetWriterInput.hlsInput()
+		self.audioInput = AVAssetWriterInput.hlsAudioInput()
 
 		setupAssetWriter()
 	}
@@ -126,34 +112,31 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 	}
 
 	func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-		// AVCaptureAudioDataOutput will skip outputs if the callback queue is not free, so simulate being free by immediately switching queue's
-		queue.async { [self] in
-			switch assetWriter.status {
-			case .unknown:
-				logger.warning("asset writer unknown status: \(self.assetWriter.status.rawValue)")
-				self.restart()
-			case .cancelled:
-				logger.warning("asset writer cancelled")
-				self.restart()
-			case .failed:
-				if let error = assetWriter.error {
-					logger.error("asset writer failed: \(error)")
-				} else {
-					logger.error("asset writer failed")
-				}
-
-				self.restart()
-			case .completed:
-				logger.warning("asset writer completed")
-				self.restart()
-			case .writing:
-				break
-			@unknown default:
-				logger.warning("asset writer unknown status: \(self.assetWriter.status.rawValue)")
-				self.restart()
+		switch assetWriter.status {
+		case .unknown:
+			logger.warning("asset writer unknown status: \(self.assetWriter.status.rawValue)")
+			self.restart()
+		case .cancelled:
+			logger.warning("asset writer cancelled")
+			self.restart()
+		case .failed:
+			if let error = assetWriter.error {
+				logger.error("asset writer failed: \(error)")
+			} else {
+				logger.error("asset writer failed")
 			}
 
-			audioInput.append(sampleBuffer)
+			self.restart()
+		case .completed:
+			logger.warning("asset writer completed")
+			self.restart()
+		case .writing:
+			break
+		@unknown default:
+			logger.warning("asset writer unknown status: \(self.assetWriter.status.rawValue)")
+			self.restart()
 		}
+
+		audioInput.append(sampleBuffer)
 	}
 }
