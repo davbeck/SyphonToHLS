@@ -39,23 +39,23 @@ final class ProfileSession {
 		return syphonService.servers.first(where: { $0.id == syphonServerID })
 	}
 
-	private final class FrameSourceManager: FrameSource {
+	private final class FrameSourceManager: VideoFrameSource {
 		let videoSource: VideoSource
-		let frameSource: any FrameSource
+		let frameSource: any VideoFrameSource
 
-		init(videoSource: VideoSource, frameSource: any FrameSource) {
+		init(videoSource: VideoSource, frameSource: any VideoFrameSource) {
 			self.videoSource = videoSource
 			self.frameSource = frameSource
 		}
 
-		var frames: any AsyncSequence<Frame, Never> {
+		var frames: any AsyncSequence<VideoFrame, Never> {
 			frameSource.frames
 		}
 	}
 
 	@ObservationIgnored
 	private weak var _frameSource: FrameSourceManager?
-	var frameSource: (any FrameSource)? {
+	var frameSource: (any VideoFrameSource)? {
 		guard let videoSource = configManager.config.videoSource else { return nil }
 
 		if let manager = _frameSource, manager.videoSource == videoSource {
@@ -79,7 +79,7 @@ final class ProfileSession {
 
 			let frameSource = FrameSourceManager(
 				videoSource: videoSource,
-				frameSource: NDIFrameSource(player: player)
+				frameSource: NDIVideoFrameSource(player: player)
 			)
 
 			_frameSource = frameSource

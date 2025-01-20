@@ -7,13 +7,13 @@ import CoreMedia
 
 @preconcurrency import Syphon
 
-final class SyphonCoreImageClient: Sendable, FrameSource {
+final class SyphonCoreImageClient: Sendable, VideoFrameSource {
 	let device: any MTLDevice
 	private let metalClient: SyphonMetalClient
 	let clock = CMClock.hostTimeClock
-	private let _frames: SharedStream<Frame>
+	private let _frames: SharedStream<VideoFrame>
 
-	var frames: any AsyncSequence<Frame, Never> {
+	var frames: any AsyncSequence<VideoFrame, Never> {
 		_frames
 	}
 
@@ -27,7 +27,7 @@ final class SyphonCoreImageClient: Sendable, FrameSource {
 		self.device = device
 		self.serverDescription = serverDescription
 
-		let (stream, continuation) = AsyncStream.makeStream(of: Frame.self)
+		let (stream, continuation) = AsyncStream.makeStream(of: VideoFrame.self)
 		self._frames = stream.share()
 
 		self.metalClient = SyphonMetalClient(
@@ -44,7 +44,7 @@ final class SyphonCoreImageClient: Sendable, FrameSource {
 					)
 				else { return }
 
-				continuation.yield(Frame(time: time, image: image))
+				continuation.yield(VideoFrame(time: time, image: image))
 			}
 		)
 	}

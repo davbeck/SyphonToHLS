@@ -5,7 +5,7 @@ import Queue
 import VideoToolbox
 
 actor HLSVideoService {
-	let frameSource: any FrameSource
+	let frameSource: any VideoFrameSource
 
 	var writerDelegate: WriterDelegate?
 	private let writers: [HLSWriter]
@@ -24,7 +24,7 @@ actor HLSVideoService {
 	init(
 		preferredOutputSegmentInterval: Double,
 		url: URL,
-		frameSource: any FrameSource,
+		frameSource: any VideoFrameSource,
 		uploader: S3Uploader,
 		quality: VideoQualityLevel
 	) {

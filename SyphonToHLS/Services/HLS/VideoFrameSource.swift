@@ -2,16 +2,16 @@ import CoreImage
 import CoreMedia
 import Dependencies
 
-struct Frame: @unchecked Sendable {
+struct VideoFrame: @unchecked Sendable {
 	var time: CMTime
 	var image: CIImage
 }
 
-protocol FrameSource: AnyObject, Sendable {
-	var frames: any AsyncSequence<Frame, Never> { get }
+protocol VideoFrameSource: AnyObject, Sendable {
+	var frames: any AsyncSequence<VideoFrame, Never> { get }
 }
 
-final class NDIFrameSource: FrameSource, Sendable {
+final class NDIVideoFrameSource: VideoFrameSource, Sendable {
 	private let _date = Dependency(\.date)
 	private let clock = CMClock.hostTimeClock
 	let player: NDIPlayer
@@ -20,8 +20,8 @@ final class NDIFrameSource: FrameSource, Sendable {
 		self.player = player
 	}
 
-	var frames: any AsyncSequence<Frame, Never> {
-		player.videoFrames.compactMap { [_date, clock] frame -> Frame? in
+	var frames: any AsyncSequence<VideoFrame, Never> {
+		player.videoFrames.compactMap { [_date, clock] frame -> VideoFrame? in
 			guard let pixelBuffer = frame.pixelBuffer else { return nil }
 			let image = CIImage(cvPixelBuffer: pixelBuffer)
 
@@ -36,7 +36,7 @@ final class NDIFrameSource: FrameSource, Sendable {
 				diff = 0
 			}
 
-			return Frame(
+			return VideoFrame(
 				time: time - CMTime(seconds: diff, preferredTimescale: 10_000_000),
 				image: image
 			)

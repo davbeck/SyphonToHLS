@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct FrameSourcePreviewView: View {
-	var frameSource: any FrameSource
+	var frameSource: any VideoFrameSource
 
 	@State private var device: (any MTLDevice)? = MTLCreateSystemDefaultDevice()
 	@State private var image: CIImage?
