@@ -103,9 +103,9 @@ actor HLSS3Writer: HLSWriter {
 final class S3Uploader: Sendable {
 	private let _urlSession = Dependency(\.urlSession)
 
-	let config: Config.AWS
+	let config: AWSConfig
 
-	init(_ config: Config.AWS) {
+	init(_ config: AWSConfig) {
 		self.config = config
 	}
 

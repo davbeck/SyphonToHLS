@@ -1,9 +1,8 @@
 import Dependencies
+import Sharing
 import SwiftUI
 
 struct SettingsContentView: View {
-	@Dependency(\.configManager) private var configManager
-
 	var body: some View {
 		TabView {
 			Tab {
@@ -11,7 +10,7 @@ struct SettingsContentView: View {
 			} label: {
 				Text("Encoder")
 			}
-			
+
 			Tab {
 				AWSSettingsTab()
 			} label: {

@@ -1,6 +1,7 @@
 import Dependencies
 import Foundation
 import Testing
+import Sharing
 
 @testable import SyphonToHLS
 
@@ -22,25 +23,22 @@ struct MutableDateGenerator {
 @MainActor
 struct ScheduleManagerTests {
 	var clock = TestClock()
-	var configManager = ConfigManager(url: nil)
 	let date = MutableDateGenerator()
 	var calendar = Calendar(identifier: .gregorian)
+	@Shared(.scheduleConfig) private var schedule = .init(
+		weekdays: [1],
+		   startHour: 10,
+		   startMinute: 0,
+		   duration: .hours(2)
+	   )
 
 	init() throws {
 		calendar.timeZone = try #require(TimeZone(identifier: "America/Los_Angeles"))
-
-		configManager.config.schedule = .init(
-			weekdays: [1],
-			startHour: 10,
-			startMinute: 0,
-			duration: .hours(2)
-		)
 	}
 
 	private func createSUT() -> ScheduleManager {
 		withDependencies {
 			$0.continuousClock = clock
-			$0.configManager = configManager
 			$0.calendar = calendar
 			$0.date = date.dateGenerator
 		} operation: {

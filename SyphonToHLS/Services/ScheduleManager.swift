@@ -1,7 +1,8 @@
 import Dependencies
 import Foundation
-import OSLog
 import Observation
+import OSLog
+import Sharing
 
 @MainActor
 @Observable
@@ -11,16 +12,12 @@ final class ScheduleManager {
 	@ObservationIgnored
 	@Dependency(\.date) private var date
 	@ObservationIgnored
-	@Dependency(\.configManager) private var configManager
-	@ObservationIgnored
 	@Dependency(\.calendar) private var calendar
 
-	let logger = Logger(category: "Schedule")
+	@ObservationIgnored
+	@Shared(.scheduleConfig) private var schedule
 
-	var schedule: Config.Schedule {
-		get { configManager.config.schedule }
-		set { configManager.config.schedule = newValue }
-	}
+	let logger = Logger(category: "Schedule")
 
 	var isActive: Bool = false
 
@@ -58,7 +55,7 @@ final class ScheduleManager {
 	}
 
 	/// Updates `isActive` and returns the delay until the next change.
-	private func updateActive(with schedule: Config.Schedule) -> Duration {
+	private func updateActive(with schedule: ScheduleConfig) -> Duration {
 		let now = date.now
 
 		guard

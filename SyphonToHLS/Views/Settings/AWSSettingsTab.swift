@@ -1,18 +1,17 @@
 import Dependencies
+import Sharing
 import SwiftUI
 
 struct AWSSettingsTab: View {
-	@Dependency(\.configManager) private var configManager
+	@Shared(.awsConfig) private var awsConfig
 
 	var body: some View {
-		@Bindable var configManager = self.configManager
-
 		Form {
 			Section("AWS Credentials") {
-				TextField("Region", text: $configManager.config.aws.region)
-				TextField("S3 Bucket", text: $configManager.config.aws.bucket)
-				TextField("Client Key", text: $configManager.config.aws.clientKey)
-				TextField("Client Secret", text: $configManager.config.aws.clientSecret)
+				TextField("Region", text: Binding($awsConfig).region)
+				TextField("S3 Bucket", text: Binding($awsConfig).bucket)
+				TextField("Client Key", text: Binding($awsConfig).clientKey)
+				TextField("Client Secret", text: Binding($awsConfig).clientSecret)
 			}
 		}
 		.padding()

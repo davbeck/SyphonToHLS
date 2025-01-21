@@ -1,13 +1,14 @@
 import Dependencies
+import Sharing
 import SwiftUI
 
 struct PerformanceView: View {
-	@Dependency(\.configManager) private var configManager
+	@Shared(.encoderConfig) private var encoderConfig
 	@Dependency(\.performanceTracker) private var performanceTracker
 
 	var streams: [Stream] {
 		VideoQualityLevel.allCases
-			.filter { configManager.config.encoder.qualityLevels.contains($0) }
+			.filter { encoderConfig.qualityLevels.contains($0) }
 			.map { Stream.video($0) } + [.audio]
 	}
 

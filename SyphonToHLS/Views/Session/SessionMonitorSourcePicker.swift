@@ -1,30 +1,38 @@
 import AVFoundation
 import Dependencies
+import Sharing
 import SimplyCoreAudio
 import SwiftUI
 
 struct SessionMonitorSourcePicker: View {
-	private let session = ProfileSession.liveValue
+	typealias Selection = String?
+
+	@Shared(.monitorDeviceID) private var monitorDeviceID
+	let audioOutputService = AudioOutputService.shared
 
 	var body: some View {
-		Picker("Audio Monitor", selection: Bindable(session).monitorDeviceUID) {
+		Picker("Audio Monitor", selection: Binding($monitorDeviceID)) {
 			Text("None")
-				.tag("")
+				.tag(Selection.none)
 
-			if !session.monitorDeviceUID.isEmpty && !session.audioOutputService.devices.contains(where: { $0.uid == session.monitorDeviceUID }) {
+			if
+				let monitorDeviceID,
+				!monitorDeviceID.isEmpty &&
+				!audioOutputService.devices.contains(where: { $0.uid == monitorDeviceID })
+			{
 				Group {
-					if let device = AudioDevice.lookup(by: session.monitorDeviceUID) {
+					if let device = AudioDevice.lookup(by: monitorDeviceID) {
 						Text("\(device.name) (Disconnected)")
 					} else {
-						Text("\(session.monitorDeviceUID) (Disconnected)")
+						Text("\(monitorDeviceID) (Disconnected)")
 					}
 				}
-				.tag(session.monitorDeviceUID)
+				.tag(Selection.some(monitorDeviceID))
 			}
 
-			ForEach(session.audioOutputService.devices.filter { $0.uid != nil }, id: \.uid) { device in
+			ForEach(audioOutputService.devices.filter { $0.uid != nil }, id: \.uid) { device in
 				Text(device.name)
-					.tag(device.uid ?? "")
+					.tag(device.uid as Selection)
 			}
 		}
 	}

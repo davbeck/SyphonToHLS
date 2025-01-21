@@ -5,13 +5,26 @@ import Dependencies
 import Metal
 import Observation
 import OSLog
+import Sharing
 import SimplyCoreAudio
 
 @MainActor
 @Observable
 final class ProfileSession {
 	@ObservationIgnored
-	@Dependency(\.configManager) private var configManager
+	@Shared(.audioSource) private var audioSource
+
+	@ObservationIgnored
+	@Shared(.videoSource) private var videoSource
+
+	@ObservationIgnored
+	@Shared(.monitorDeviceID) private var monitorDeviceID
+
+	@ObservationIgnored
+	@Shared(.encoderConfig) private var encoderConfig
+
+	@ObservationIgnored
+	@Shared(.awsConfig) private var awsConfig
 
 	private var webServer: WebServer?
 
@@ -32,12 +45,7 @@ final class ProfileSession {
 	private let logger = Logger(category: "ProfileSession")
 
 	var qualityLevels: Set<VideoQualityLevel> {
-		configManager.config.encoder.qualityLevels
-	}
-
-	var syphonServer: ServerDescription? {
-		guard let syphonServerID = configManager.config.videoSource?.syphonID else { return nil }
-		return syphonService.servers.first(where: { $0.id == syphonServerID })
+		encoderConfig.qualityLevels
 	}
 
 	private final class FrameSourceManager: VideoFrameSource {
@@ -57,7 +65,7 @@ final class ProfileSession {
 	@ObservationIgnored
 	private weak var _frameSource: FrameSourceManager?
 	var frameSource: (any VideoFrameSource)? {
-		guard let videoSource = configManager.config.videoSource else { return nil }
+		guard let videoSource else { return nil }
 
 		if let manager = _frameSource, manager.videoSource == videoSource {
 			return manager.frameSource
@@ -89,29 +97,10 @@ final class ProfileSession {
 	}
 
 	var audioDevice: AVCaptureDevice? {
-		get {
-			guard let audioDeviceID = configManager.config.audioSource?.audioDeviceID else { return nil }
+		guard let audioDeviceID = audioSource?.audioDeviceID else { return nil }
 
-			// by looking in audioSourceService, we will trigger an observation update if something becomes available
-			return audioSourceService.devices.first(where: { $0.uniqueID == audioDeviceID }) ??
-				AVCaptureDevice(uniqueID: audioDeviceID)
-		}
-		set {
-			if let newValue {
-				configManager.config.audioSource = .audioDevice(id: newValue.uniqueID)
-			} else {
-				configManager.config.audioSource = nil
-			}
-		}
-	}
-
-	var monitorDeviceUID: String {
-		get {
-			configManager.config.monitorDeviceID
-		}
-		set {
-			configManager.config.monitorDeviceID = newValue
-		}
+		// by looking in audioSourceService, we will trigger an observation update if something becomes available
+		return audioSourceService.device(withID: audioDeviceID)
 	}
 
 	var isRunning = false {
@@ -178,7 +167,7 @@ final class ProfileSession {
 		withObservationTracking {
 			guard self.isRunning else { return }
 
-			let uploader = S3Uploader(configManager.config.aws)
+			let uploader = S3Uploader(awsConfig)
 
 			let variantPlaylist =
 				"""
@@ -225,7 +214,7 @@ final class ProfileSession {
 	private var videoTask: Task<Void, Never>?
 	private func trackVideoRecording() {
 		withObservationTracking { [logger] in
-			let preferredOutputSegmentInterval = configManager.config.encoder.preferredOutputSegmentInterval
+			let preferredOutputSegmentInterval = encoderConfig.preferredOutputSegmentInterval
 
 			videoTask?.cancel()
 
@@ -234,7 +223,7 @@ final class ProfileSession {
 				let frameSource = self.frameSource
 			else { return }
 
-			let uploader = S3Uploader(configManager.config.aws)
+			let uploader = S3Uploader(awsConfig)
 
 			let qualityLevels = self.qualityLevels
 
@@ -277,11 +266,11 @@ final class ProfileSession {
 				audioTask = nil
 				return
 			}
-			
-			let preferredOutputSegmentInterval = configManager.config.encoder.preferredOutputSegmentInterval
-			let uploader = S3Uploader(configManager.config.aws)
 
-			switch configManager.config.audioSource {
+			let preferredOutputSegmentInterval = encoderConfig.preferredOutputSegmentInterval
+			let uploader = S3Uploader(awsConfig)
+
+			switch audioSource {
 			case let .audioDevice(id: id):
 				guard let audioDevice = self.audioDevice else {
 					audioTask = nil
@@ -302,14 +291,14 @@ final class ProfileSession {
 				}
 			case let .ndi(name: name):
 				let player = NDIPlayer.player(for: name)
-				
+
 				let service = HLSNDIAudioService(
 					preferredOutputSegmentInterval: preferredOutputSegmentInterval,
 					player: player,
 					url: url,
 					uploader: uploader
 				)
-				
+
 				let task = Task {
 					await service.start()
 				}
@@ -328,8 +317,8 @@ final class ProfileSession {
 		withObservationTracking {
 			captureSession.beginConfiguration()
 
-			if audioOutputService.devices.contains(where: { $0.uid == monitorDeviceUID }) {
-				previewOutput.outputDeviceUniqueID = monitorDeviceUID
+			if audioOutputService.devices.contains(where: { $0.uid == monitorDeviceID }) {
+				previewOutput.outputDeviceUniqueID = monitorDeviceID
 
 				if !captureSession.outputs.contains(previewOutput), captureSession.canAddOutput(previewOutput) {
 					captureSession.addOutput(previewOutput)

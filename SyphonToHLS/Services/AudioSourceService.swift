@@ -1,7 +1,7 @@
 import AVFoundation
 import Combine
-import Observation
 import Dependencies
+import Observation
 
 @Observable
 @MainActor
@@ -27,5 +27,11 @@ final class AudioSourceService {
 				}
 			}
 			.store(in: &observers)
+	}
+
+	func device(withID audioDeviceID: String) -> AVCaptureDevice? {
+		// by looking in audioSourceService, we will trigger an observation update if something becomes available
+		devices.first(where: { $0.uniqueID == audioDeviceID }) ??
+			AVCaptureDevice(uniqueID: audioDeviceID)
 	}
 }

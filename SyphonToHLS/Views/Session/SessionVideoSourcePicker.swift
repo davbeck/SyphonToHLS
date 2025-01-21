@@ -1,26 +1,28 @@
 import Dependencies
+import Sharing
 import SwiftUI
 
 struct SessionVideoSourcePicker: View {
-	@Dependency(\.configManager) private var configManager
+	@Shared(.videoSource) private var videoSource
 
 	private let session = ProfileSession.liveValue
 
-	@State private var finder = NDIFindManager()
+	@State private var finder = NDIFindManager.shared
 
 	var ndiSources: [NDISource] {
 		finder?.sources ?? []
 	}
 
 	var body: some View {
-		@Bindable var configManager = self.configManager
-
-		Picker("Video Source", selection: $configManager.config.videoSource) {
+		Picker("Video Source", selection: Binding($videoSource)) {
 			Text("None")
 				.tag(VideoSource?.none)
 
 			Section("Syphon") {
-				if let syphonServerID = configManager.config.videoSource?.syphonID, !session.syphonService.servers.contains(where: { $0.id == syphonServerID }) {
+				if
+					let syphonServerID = videoSource?.syphonID,
+					!session.syphonService.servers.contains(where: { $0.id == syphonServerID })
+				{
 					Text("\(syphonServerID.appName) - \(syphonServerID.name) (Unavailable)")
 						.tag(Optional.some(VideoSource.syphon(id: syphonServerID)))
 						.disabled(true)
@@ -33,7 +35,10 @@ struct SessionVideoSourcePicker: View {
 			}
 
 			Section("NDI") {
-				if let ndiName = configManager.config.videoSource?.ndiName, !ndiSources.contains(where: { $0.name == ndiName }) {
+				if
+					let ndiName = videoSource?.ndiName,
+					!ndiSources.contains(where: { $0.name == ndiName })
+				{
 					Text("\(ndiName) (Unavailable)")
 						.tag(Optional.some(VideoSource.ndi(name: ndiName)))
 						.disabled(true)
@@ -44,9 +49,6 @@ struct SessionVideoSourcePicker: View {
 						.tag(Optional.some(VideoSource.ndi(name: source.name)))
 				}
 			}
-		}
-		.task {
-			await finder?.start()
 		}
 	}
 }
