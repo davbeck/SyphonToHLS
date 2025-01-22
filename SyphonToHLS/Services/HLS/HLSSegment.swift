@@ -2,7 +2,7 @@ import AVFoundation
 import Foundation
 
 struct HLSSegment {
-	var index: Int
+	var id: Int
 	var data: Data
 	var type: AVAssetSegmentType
 	var report: AVAssetSegmentReport?

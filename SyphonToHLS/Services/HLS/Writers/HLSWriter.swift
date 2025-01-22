@@ -8,10 +8,13 @@ protocol HLSWriter: Sendable {
 }
 
 final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
+	let _idGenerator = Dependency(HLSSegmentIDGenerator.self)
+
 	let performanceTracker: PerformanceTracker
 
 	private let logger = Logger(category: "HLSWriterDelegate")
 
+	let queue = AsyncQueue()
 	let outputs: [(writer: HLSWriter, queue: AsyncQueue)]
 	let start: CMTime
 	let segmentInterval: CMTime
@@ -20,7 +23,7 @@ final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
 
 	init(start: CMTime, segmentInterval: CMTime, writers: [HLSWriter], stream: Stream) {
 		self.performanceTracker = Dependency(\.performanceTracker).wrappedValue
-		
+
 		self.start = start
 		self.segmentInterval = segmentInterval
 		self.outputs = writers.map { ($0, .init()) }
@@ -36,39 +39,47 @@ final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
 		segmentType: AVAssetSegmentType,
 		segmentReport: AVAssetSegmentReport?
 	) {
-		let index: Int
-		switch segmentType {
-		case .initialization:
-			index = 0
-		case .separable:
-			guard let segmentReport, let start = segmentReport.start, start.isValid else {
-				logger.error("invalid segment \(String(describing: segmentReport))")
+		queue.addOperation { [self] in
+			let id: Int
+			switch segmentType {
+			case .initialization:
+				id = 0
+			case .separable:
+				guard
+					let segmentReport,
+					let start = segmentReport.start, start.isValid,
+					let end = segmentReport.end, end.isValid,
+					let segmentID = await _idGenerator.wrappedValue.segmentID(for: start ..< end)
+				else {
+					logger.error("invalid segment \(String(describing: segmentReport))")
+					return
+				}
+
+				// compare end of segment to current time
+				if let duration = segmentReport.duration {
+					Task {
+						let encodingTime = (CMClock.hostTimeClock.time - end).seconds
+						let performance = encodingTime / duration.seconds
+
+						await self.performanceTracker.record(performance, stream: stream, operation: .encode)
+					}
+				}
+
+				id = segmentID
+			@unknown default:
+				logger.warning("unknown segment type: \(segmentType.rawValue, privacy: .public)")
 				return
 			}
-			index = Int((start.seconds / segmentInterval.seconds).rounded())
-		@unknown default:
-			logger.warning("unknown segment type: \(segmentType.rawValue, privacy: .public)")
-			return
-		}
 
-		// compare end of segment to current time
-		if let end = segmentReport?.end, let duration = segmentReport?.duration {
-			Task {
-				let encodingTime = (CMClock.hostTimeClock.time - end).seconds
-				let performance = encodingTime / duration.seconds
-
-				await self.performanceTracker.record(performance, stream: stream, operation: .encode)
-			}
-		}
-
-		for (writer, queue) in self.outputs {
-			queue.addOperation {
-				try await writer.write(.init(
-					index: index,
-					data: segmentData,
-					type: segmentType,
-					report: segmentReport
-				))
+			for (writer, queue) in self.outputs {
+				queue.addOperation {
+					try await writer.write(.init(
+						id: id,
+						data: segmentData,
+						type: segmentType,
+						report: segmentReport
+					))
+				}
 			}
 		}
 	}

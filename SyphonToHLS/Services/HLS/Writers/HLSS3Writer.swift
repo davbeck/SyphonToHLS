@@ -43,7 +43,7 @@ actor HLSS3Writer: HLSWriter {
 			let start = Date.now
 
 			let record = HLSRecord(
-				index: segment.index,
+				index: segment.id,
 				duration: segment.duration
 			)
 			if let lastRecord = records.last, record.index != lastRecord.index + 1 {

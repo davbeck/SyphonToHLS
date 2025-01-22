@@ -28,7 +28,7 @@ actor HLSFileWriter: HLSWriter {
 				)
 			case .separable:
 				let record = HLSRecord(
-					index: segment.index,
+					index: segment.id,
 					duration: segment.duration
 				)
 				records.append(record)
