@@ -8,7 +8,8 @@ protocol HLSWriter: Sendable {
 }
 
 final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
-	let _idGenerator = Dependency(HLSSegmentIDGenerator.self)
+	private let _idGenerator = Dependency(HLSSegmentIDGenerator.self)
+	private let _clock = Dependency(\.hostTimeClock)
 
 	let performanceTracker: PerformanceTracker
 
@@ -16,16 +17,12 @@ final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
 
 	let queue = AsyncQueue()
 	let outputs: [(writer: HLSWriter, queue: AsyncQueue)]
-	let start: CMTime
-	let segmentInterval: CMTime
 
 	let stream: Stream
 
-	init(start: CMTime, segmentInterval: CMTime, writers: [HLSWriter], stream: Stream) {
+	init(writers: [HLSWriter], stream: Stream) {
 		self.performanceTracker = Dependency(\.performanceTracker).wrappedValue
 
-		self.start = start
-		self.segmentInterval = segmentInterval
 		self.outputs = writers.map { ($0, .init()) }
 
 		self.stream = stream
@@ -39,6 +36,8 @@ final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
 		segmentType: AVAssetSegmentType,
 		segmentReport: AVAssetSegmentReport?
 	) {
+		let time = _clock.wrappedValue.time
+		
 		queue.addOperation { [self] in
 			let id: Int
 			switch segmentType {
@@ -58,7 +57,7 @@ final class WriterDelegate: NSObject, AVAssetWriterDelegate, Sendable {
 				// compare end of segment to current time
 				if let duration = segmentReport.duration {
 					Task {
-						let encodingTime = (CMClock.hostTimeClock.time - end).seconds
+						let encodingTime = (time - end).seconds
 						let performance = encodingTime / duration.seconds
 
 						await self.performanceTracker.record(performance, stream: stream, operation: .encode)

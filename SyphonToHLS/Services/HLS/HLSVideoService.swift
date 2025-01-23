@@ -1,5 +1,6 @@
 import AVFoundation
 import CoreImage
+import Dependencies
 import OSLog
 import Queue
 import VideoToolbox
@@ -10,7 +11,7 @@ actor HLSVideoService {
 	var writerDelegate: WriterDelegate?
 	private let writers: [HLSWriter]
 
-	private let clock = CMClock.hostTimeClock
+	@Dependency(\.hostTimeClock) private var clock
 	private let assetWriter: AVAssetWriter
 	private let videoInput: AVAssetWriterInput
 	private let pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor
@@ -77,8 +78,6 @@ actor HLSVideoService {
 		start = CMTime(seconds: roundedSeconds, preferredTimescale: start.timescale)
 
 		self.writerDelegate = WriterDelegate(
-			start: start,
-			segmentInterval: assetWriter.preferredOutputSegmentInterval,
 			writers: writers,
 			stream: .video(quality)
 		)

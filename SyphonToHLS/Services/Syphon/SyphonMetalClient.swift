@@ -2,6 +2,7 @@ import Cocoa
 import Combine
 import CoreImage
 import CoreMedia
+import Dependencies
 
 @preconcurrency import Metal
 
@@ -10,7 +11,6 @@ import CoreMedia
 final class SyphonCoreImageClient: Sendable, VideoFrameSource {
 	let device: any MTLDevice
 	private let metalClient: SyphonMetalClient
-	let clock = CMClock.hostTimeClock
 	private let _frames: SharedStream<VideoFrame>
 
 	var frames: any AsyncSequence<VideoFrame, Never> {
@@ -24,6 +24,8 @@ final class SyphonCoreImageClient: Sendable, VideoFrameSource {
 		device: any MTLDevice,
 		options: [AnyHashable: Any]? = nil
 	) {
+		@Dependency(\.hostTimeClock) var clock
+
 		self.device = device
 		self.serverDescription = serverDescription
 
@@ -34,7 +36,7 @@ final class SyphonCoreImageClient: Sendable, VideoFrameSource {
 			serverDescription: serverDescription.description,
 			device: device,
 			options: options,
-			newFrameHandler: { [clock] client in
+			newFrameHandler: { client in
 				let time = clock.time
 				guard
 					let texture = client.newFrameImage(),

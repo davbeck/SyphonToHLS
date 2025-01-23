@@ -1,9 +1,10 @@
 import AVFoundation
 import OSLog
+import Dependencies
 
 final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate, @unchecked Sendable {
 	private let logger = Logger(category: "HLSAudioService")
-	private let clock = CMClock.hostTimeClock
+	@Dependency(\.hostTimeClock) private var clock
 
 	private let queue = DispatchQueue(label: "HLSAudioService")
 
@@ -46,8 +47,6 @@ final class HLSAudioService: NSObject, AVCaptureAudioDataOutputSampleBufferDeleg
 		start = CMTime(seconds: roundedSeconds, preferredTimescale: start.timescale)
 
 		self.writerDelegate = WriterDelegate(
-			start: start,
-			segmentInterval: assetWriter.preferredOutputSegmentInterval,
 			writers: writers,
 			stream: .audio
 		)

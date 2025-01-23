@@ -1,5 +1,6 @@
 import AVFoundation
 import CoreImage
+import Dependencies
 import OSLog
 import Queue
 import VideoToolbox
@@ -8,7 +9,7 @@ actor HLSNDIAudioService {
 	var writerDelegate: WriterDelegate?
 	private let writers: [HLSWriter]
 
-	private let clock = CMClock.hostTimeClock
+	@Dependency(\.hostTimeClock) private var clock
 	private lazy var assetWriter = AVAssetWriter.hlsWriter(preferredOutputSegmentInterval: preferredOutputSegmentInterval)
 	private lazy var audioInput = AVAssetWriterInput.hlsAudioInput()
 
@@ -45,8 +46,6 @@ actor HLSNDIAudioService {
 				start = CMTime(seconds: roundedSeconds, preferredTimescale: start.timescale)
 
 				self.writerDelegate = WriterDelegate(
-					start: start,
-					segmentInterval: assetWriter.preferredOutputSegmentInterval,
 					writers: writers,
 					stream: .audio
 				)

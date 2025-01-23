@@ -12,7 +12,7 @@ protocol VideoFrameSource: AnyObject, Sendable {
 }
 
 final class NDIVideoFrameSource: VideoFrameSource, Sendable {
-	private let clock = CMClock.hostTimeClock
+	private let _clock = Dependency(\.hostTimeClock)
 	let player: NDIPlayer
 
 	init(player: NDIPlayer) {
@@ -20,7 +20,9 @@ final class NDIVideoFrameSource: VideoFrameSource, Sendable {
 	}
 
 	var frames: any AsyncSequence<VideoFrame, Never> {
-		player.videoFrames.compactMap { [clock] frame -> VideoFrame? in
+		let clock = _clock.wrappedValue
+
+		return player.videoFrames.compactMap { [clock] frame -> VideoFrame? in
 			guard let pixelBuffer = frame.pixelBuffer else { return nil }
 			let image = CIImage(cvPixelBuffer: pixelBuffer)
 
