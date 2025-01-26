@@ -486,7 +486,7 @@
 				CODE_SIGN_ENTITLEMENTS = SyphonToHLS/SyphonToHLS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "\"SyphonToHLS/Preview Content\"";
 				DEVELOPMENT_TEAM = 7TR2B85D62;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -501,6 +501,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = SyphonToHLS;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Local network connections are used to find and use NDI sources.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is used for streaming input audio.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -526,7 +527,7 @@
 				CODE_SIGN_ENTITLEMENTS = SyphonToHLS/SyphonToHLS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "\"SyphonToHLS/Preview Content\"";
 				DEVELOPMENT_TEAM = 7TR2B85D62;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -541,6 +542,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = SyphonToHLS;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Local network connections are used to find and use NDI sources.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is used for streaming input audio.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
