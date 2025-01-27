@@ -1,5 +1,6 @@
 import AVFoundation
 import CoreMedia
+import Dependencies
 
 final class NDIAudioFrame: @unchecked Sendable {
 	let receiver: NDIReceiver
@@ -56,7 +57,7 @@ final class NDIAudioFrame: @unchecked Sendable {
 		.nanoseconds((Int64(ref.no_samples) * 1_000_000_000) / Int64(ref.sample_rate))
 	}
 
-	var sampleBuffer: CMSampleBuffer? {
+	func sampleBuffer(presentationsTimeOffset: CMTime? = nil) throws -> CMSampleBuffer {
 		switch ref.FourCC {
 		case NDIlib_FourCC_audio_type_FLTP:
 			var context = CFAllocatorContext(
@@ -92,7 +93,7 @@ final class NDIAudioFrame: @unchecked Sendable {
 			)
 
 			guard status == kCMBlockBufferNoErr, let blockBuffer else {
-				return nil
+				throw CMBlockBufferCreateWithMemoryBlockError(status: status)
 			}
 
 			var sampleBuffer: CMSampleBuffer?
@@ -121,32 +122,43 @@ final class NDIAudioFrame: @unchecked Sendable {
 				formatDescriptionOut: &formatDescription
 			)
 			guard cmAudioFormatDescriptionCreateStatus == noErr else {
-				print("Failed to create CMAudioFormatDescription: \(status)")
-				return nil
+				throw CMAudioFormatDescriptionCreateError(status: status)
 			}
+
+			var presentationTime = CMTime(
+				// convert timestamp to sample_rate
+				value: .init(UInt128(ref.timestamp) * UInt128(ref.sample_rate) / UInt128(NDI.timescale)),
+				timescale: ref.sample_rate
+			)
+			if let presentationsTimeOffset {
+				presentationTime = presentationTime - presentationsTimeOffset
+			}
+
+			var timingInfo = CMSampleTimingInfo(
+				duration: CMTime(value: 1, timescale: ref.sample_rate),
+				presentationTimeStamp: presentationTime,
+				decodeTimeStamp: presentationTime
+			)
 
 			let sampleBufferStatus = CMSampleBufferCreateReady(
 				allocator: kCFAllocatorDefault,
 				dataBuffer: blockBuffer,
 				formatDescription: formatDescription,
 				sampleCount: .init(ref.no_samples),
-				sampleTimingEntryCount: 0,
-				sampleTimingArray: nil,
+				sampleTimingEntryCount: 1,
+				sampleTimingArray: &timingInfo,
 				sampleSizeEntryCount: 1,
 				sampleSizeArray: sampleSizeArray,
 				sampleBufferOut: &sampleBuffer
 			)
 
 			guard let sampleBuffer, sampleBufferStatus == noErr else {
-				return nil
+				throw CMSampleBufferCreateReadyError(status: sampleBufferStatus)
 			}
-
-			let presentationTime = CMTime(value: .init(ref.timestamp), timescale: .init(NDI.timescale))
-			CMSampleBufferSetOutputPresentationTimeStamp(sampleBuffer, newValue: presentationTime)
 
 			return sampleBuffer
 		default:
-			return nil
+			throw NDIAudioFrameUnrecognizedTypeError(FourCC: ref.FourCC)
 		}
 	}
 }
@@ -155,4 +167,20 @@ extension NDIAudioFrame: CustomStringConvertible {
 	var description: String {
 		"<NDIAudioFrame sample_rate: \(sampleRate), no_channels: \(numberOfChannels), no_samples: \(numberOfSamples), timecode: \(timecode), channel_stride_in_bytes: \(ref.channel_stride_in_bytes), p_metadata: \(metadata ?? ""), timestamp: \(timestamp?.formatted() ?? "none")>"
 	}
+}
+
+struct NDIAudioFrameUnrecognizedTypeError: Error {
+	var FourCC: NDIlib_FourCC_audio_type_e
+}
+
+struct CMBlockBufferCreateWithMemoryBlockError: Error {
+	var status: OSStatus
+}
+
+struct CMAudioFormatDescriptionCreateError: Error {
+	var status: OSStatus
+}
+
+struct CMSampleBufferCreateReadyError: Error {
+	var status: OSStatus
 }
