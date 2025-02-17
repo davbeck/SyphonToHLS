@@ -10,14 +10,13 @@
 		1108E52C2D36182300A74135 /* AWSSigner in Frameworks */ = {isa = PBXBuildFile; productRef = 1108E52B2D36182300A74135 /* AWSSigner */; };
 		1108E5312D36AF1D00A74135 /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; };
 		1108E5322D36AF1D00A74135 /* Syphon.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		1108E58A2D37658D00A74135 /* libndi.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1108E5892D37658C00A74135 /* libndi.dylib */; };
-		1108E5992D376B8900A74135 /* libndi.dylib in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1108E5892D37658C00A74135 /* libndi.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		110A34902D35C9D900524032 /* NWHTTPServer in Frameworks */ = {isa = PBXBuildFile; productRef = 110A348F2D35C9D900524032 /* NWHTTPServer */; };
 		111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 111477002C7E90C600C4E395 /* KeychainSwift */; };
 		1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; };
 		1127AC512C76375D004C5D8C /* Syphon.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1127AC4E2C763756004C5D8C /* Syphon.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		113A5FEF2D13BC580029F1ED /* SimplyCoreAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 113A5FEE2D13BC580029F1ED /* SimplyCoreAudio */; };
 		1141D2D22D3F3F6000810764 /* Sharing in Frameworks */ = {isa = PBXBuildFile; productRef = 1141D2D12D3F3F6000810764 /* Sharing */; };
+		11508D312D63F55D00F4EB5D /* NDI in Frameworks */ = {isa = PBXBuildFile; productRef = 11508D302D63F55D00F4EB5D /* NDI */; };
 		11C0250A2D0BC4CA007457C8 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 11C025092D0BC4CA007457C8 /* Dependencies */; };
 		11C0250E2D0BE0C6007457C8 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 11C0250D2D0BE0C6007457C8 /* SFSafeSymbols */; };
 		11D6F8D82D06B08A00D3A159 /* Queue in Frameworks */ = {isa = PBXBuildFile; productRef = 11D6F8D72D06B08A00D3A159 /* Queue */; };
@@ -59,7 +58,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				1108E5992D376B8900A74135 /* libndi.dylib in Embed Frameworks */,
 				1127AC512C76375D004C5D8C /* Syphon.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -101,10 +99,10 @@
 				110A34902D35C9D900524032 /* NWHTTPServer in Frameworks */,
 				111477012C7E90C600C4E395 /* KeychainSwift in Frameworks */,
 				1127AC502C76375D004C5D8C /* Syphon.framework in Frameworks */,
+				11508D312D63F55D00F4EB5D /* NDI in Frameworks */,
 				11C0250E2D0BE0C6007457C8 /* SFSafeSymbols in Frameworks */,
 				11E07C992D29FE320095F157 /* MetaCodable in Frameworks */,
 				11C0250A2D0BC4CA007457C8 /* Dependencies in Frameworks */,
-				1108E58A2D37658D00A74135 /* libndi.dylib in Frameworks */,
 				1141D2D22D3F3F6000810764 /* Sharing in Frameworks */,
 				11D6F8D82D06B08A00D3A159 /* Queue in Frameworks */,
 			);
@@ -188,6 +186,7 @@
 				110A348F2D35C9D900524032 /* NWHTTPServer */,
 				1108E52B2D36182300A74135 /* AWSSigner */,
 				1141D2D12D3F3F6000810764 /* Sharing */,
+				11508D302D63F55D00F4EB5D /* NDI */,
 			);
 			productName = SyphonToHLS;
 			productReference = 1127AC1B2C7636F8004C5D8C /* SyphonToHLS.app */;
@@ -283,6 +282,7 @@
 				110A342A2D35C99600524032 /* XCRemoteSwiftPackageReference "NWHTTPProtocol" */,
 				110A34912D36021B00524032 /* XCRemoteSwiftPackageReference "aws-signer-v4" */,
 				117F420A2D3F38BD00C45F07 /* XCRemoteSwiftPackageReference "swift-sharing" */,
+				11508D2F2D63F55D00F4EB5D /* XCRemoteSwiftPackageReference "swift-ndi" */,
 			);
 			productRefGroup = 1127AC1C2C7636F8004C5D8C /* Products */;
 			projectDirPath = "";
@@ -714,6 +714,14 @@
 				minimumVersion = 4.1.1;
 			};
 		};
+		11508D2F2D63F55D00F4EB5D /* XCRemoteSwiftPackageReference "swift-ndi" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/davbeck/swift-ndi.git";
+			requirement = {
+				kind = revision;
+				revision = 6f47ed6195ed88174ab40dd15f343cdfa3a25914;
+			};
+		};
 		1151D20E2D06AEA9003BB250 /* XCRemoteSwiftPackageReference "Queue" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/mattmassicotte/Queue.git";
@@ -773,6 +781,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 117F420A2D3F38BD00C45F07 /* XCRemoteSwiftPackageReference "swift-sharing" */;
 			productName = Sharing;
+		};
+		11508D302D63F55D00F4EB5D /* NDI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 11508D2F2D63F55D00F4EB5D /* XCRemoteSwiftPackageReference "swift-ndi" */;
+			productName = NDI;
 		};
 		11C025092D0BC4CA007457C8 /* Dependencies */ = {
 			isa = XCSwiftPackageProductDependency;

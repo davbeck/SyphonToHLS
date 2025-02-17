@@ -1,6 +1,7 @@
 import CoreImage
 import CoreMedia
 import Dependencies
+import NDI
 
 struct VideoFrame: @unchecked Sendable {
 	var time: CMTime

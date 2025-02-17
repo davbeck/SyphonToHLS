@@ -3,6 +3,7 @@ import Combine
 import CoreImage
 import Dependencies
 import Metal
+import NDI
 import Observation
 import OSLog
 import Sharing

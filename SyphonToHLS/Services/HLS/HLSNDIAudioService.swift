@@ -3,6 +3,7 @@ import CoreImage
 import Dependencies
 import OSLog
 import Queue
+import NDI
 import VideoToolbox
 
 actor HLSNDIAudioService {

@@ -1,5 +1,5 @@
 {
-  "originHash" : "10b85f1e606ca2a7f3924b1d0c024f969ebafbf1925fb04f87ce13a3d360f55a",
+  "originHash" : "33147f0eae30362f263809a41fc2301504d099290d245ceabcc2644d332a190e",
   "pins" : [
     {
       "identity" : "aws-signer-v4",
@@ -132,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-dependencies.git",
       "state" : {
-        "revision" : "5526c8a27675dc7b18d6fa643abfb64bcb200b77",
-        "version" : "1.6.2"
+        "revision" : "52b5e1a09dc016e64ce253e19ab3124b7fae9ac9",
+        "version" : "1.7.0"
       }
     },
     {
@@ -143,6 +143,14 @@
       "state" : {
         "revision" : "2f5ab6e091dd032b63dacbda052405756010dc3b",
         "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "swift-ndi",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/davbeck/swift-ndi.git",
+      "state" : {
+        "revision" : "6f47ed6195ed88174ab40dd15f343cdfa3a25914"
       }
     },
     {
