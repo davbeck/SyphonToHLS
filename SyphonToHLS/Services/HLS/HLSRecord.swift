@@ -2,6 +2,7 @@ import CoreMedia
 
 struct HLSRecord {
 	var index: Int
+	var discontinuityIndex: Int
 	var duration: CMTime
 
 	var name: String {
@@ -9,33 +10,45 @@ struct HLSRecord {
 	}
 }
 
-extension Collection where Element == HLSRecord {
+extension Collection<HLSRecord> {
 	func hlsPlaylist(prefix: String?) -> String {
 		let prefix = if let prefix {
 			prefix + "/"
 		} else {
 			""
 		}
-		
-		let segmentTemplate = self
-			.map { record in
-				"""
-				#EXTINF:\(record.duration.seconds),
-				\(prefix)\(record.name)
-				"""
-			}
-			.joined(separator: "\n")
 
 		let startSequence = self.first?.index ?? 1
+		let startDiscontinuity = self.first?.discontinuityIndex ?? 1
 
-		return """
+		var playlist = """
 		#EXTM3U
 		#EXT-X-TARGETDURATION:6
 		#EXT-X-VERSION:9
 		#EXT-X-MEDIA-SEQUENCE:\(startSequence)
-		#EXT-X-DISCONTINUITY-SEQUENCE:\(startSequence)
+		#EXT-X-DISCONTINUITY-SEQUENCE:\(startDiscontinuity)
 		#EXT-X-MAP:URI="\(prefix)0.mp4"
-		\(segmentTemplate)
+
 		"""
+
+		var previous: HLSRecord?
+		for record in self {
+			if let previous, record.discontinuityIndex != previous.discontinuityIndex {
+				playlist.append("""
+				#EXT-X-DISCONTINUITY
+
+				""")
+			}
+			
+			playlist.append("""
+			#EXTINF:\(record.duration.seconds),
+			\(prefix)\(record.name)
+			
+			""")
+			
+			previous = record
+		}
+
+		return playlist
 	}
 }

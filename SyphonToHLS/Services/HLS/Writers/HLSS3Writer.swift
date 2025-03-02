@@ -17,6 +17,8 @@ actor HLSS3Writer: HLSWriter {
 	var writeTask: Task<Void, Never> = Task {}
 
 	let stream: Stream
+	
+	private var hasNewInitialization = false
 
 	init(uploader: S3Uploader, stream: Stream) {
 		self.uploader = uploader
@@ -26,6 +28,8 @@ actor HLSS3Writer: HLSWriter {
 	func write(_ segment: HLSSegment) async throws {
 		switch segment.type {
 		case .initialization:
+			hasNewInitialization = true
+			
 			while !Task.isCancelled {
 				do {
 					try await uploader.write(
@@ -42,17 +46,38 @@ actor HLSS3Writer: HLSWriter {
 		case .separable:
 			let start = Date.now
 
-			let record = HLSRecord(
+			var record = HLSRecord(
 				index: segment.id,
+				discontinuityIndex: 0,
 				duration: segment.duration
 			)
-			if let lastRecord = records.last, record.index != lastRecord.index + 1 {
-				logger.warning("segment index \(record.index) is not immediately after \(lastRecord.index), resetting records")
-				records.removeAll()
+			if let lastRecord = records.last {
+				if record.index <= lastRecord.index {
+					logger.warning("segment index \(record.index) is before \(lastRecord.index + 1), resetting records")
+					records.removeAll()
+				} else if record.index > lastRecord.index + 1 {
+					logger.warning("segment index \(record.index) is not immediately after \(lastRecord.index), discontinuity")
+
+					for index in (lastRecord.index + 1) ..< record.index {
+						// force 404
+						records.append(HLSRecord(
+							index: index,
+							discontinuityIndex: lastRecord.discontinuityIndex,
+							duration: lastRecord.duration
+						))
+					}
+
+					record.discontinuityIndex = lastRecord.discontinuityIndex + 1
+				} else if hasNewInitialization {
+					hasNewInitialization = false
+					record.discontinuityIndex = lastRecord.discontinuityIndex + 1
+				} else {
+					record.discontinuityIndex = lastRecord.discontinuityIndex
+				}
 			}
 			records.append(record)
 
-			let segmentUpload = Task {
+			let segmentUpload = Task { [record] in
 				func upload() async throws {
 					try await uploader.write(
 						data: segment.data,
