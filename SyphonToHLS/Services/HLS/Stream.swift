@@ -23,9 +23,9 @@ enum VideoQualityLevel: String, CaseIterable, Codable {
 	var bitrate: Int {
 		switch self {
 		case .high:
-			Int(7.5 * 1024 * 1024)
+			Int(4.5 * 1024 * 1024)
 		case .medium:
-			Int(3.8 * 1024 * 1024)
+			Int(2.5 * 1024 * 1024)
 		case .low:
 			Int(350 * 1024)
 		}
